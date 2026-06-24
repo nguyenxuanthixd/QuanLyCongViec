@@ -107,6 +107,32 @@
 
   <!-- Main Container -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+    <!-- Google Sheets Connection status banner -->
+    <div id="sheets-connection-banner" class="hidden mb-6 animate-fade-in">
+      <div class="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/40 rounded-2xl p-4 flex items-start gap-3 shadow-xs">
+        <div class="p-2 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-xl shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+          </svg>
+        </div>
+        <div class="flex-1">
+          <h3 class="text-sm font-bold text-indigo-850 dark:text-indigo-300">Đồng bộ hóa Google Sheets</h3>
+          <p class="text-xs text-indigo-600 dark:text-indigo-400/80 mt-0.5">
+            Ứng dụng đang hoạt động ở chế độ <b>mô phỏng bộ nhớ tạm thời</b> vì chưa dán link Web App. 
+            Để kích hoạt đồng bộ hóa dữ liệu online 2 chiều, vui lòng mở mã nguồn <code>index.html</code>, tìm biến <code>const SCRIPT_URL</code> ở đầu thẻ <code>&lt;script&gt;</code> và điền link Google Apps Script Web App của bạn.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Global Loading Spinner Overlay -->
+    <div id="global-loading-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center hidden">
+      <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl flex flex-col items-center gap-3 border border-gray-100 dark:border-slate-800 animate-fade-in">
+        <div class="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-xs font-bold text-gray-700 dark:text-slate-300">Đang đồng bộ dữ liệu trực tuyến...</p>
+      </div>
+    </div>
+
     <!-- Active Overdue Alerts Banner (Crucial Alert Center) -->
     <div id="alert-banner-container" class="hidden mb-6 animate-fade-in">
       <div class="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-2xl p-4 flex items-start gap-3 shadow-xs">
@@ -146,6 +172,9 @@
               <select id="task-form-project-id" class="w-full rounded-xl border border-gray-200 dark:border-slate-800 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-850 dark:text-slate-100 font-medium" required>
                 <!-- Injected by JS -->
               </select>
+              <div id="task-form-new-project-container" class="hidden mt-2 animate-fade-in">
+                <input type="text" id="task-form-new-project-name" placeholder="Nhập tên dự án mới..." class="w-full rounded-xl border border-indigo-200 dark:border-indigo-950/30 px-3 py-2 text-xs bg-indigo-50/10 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-850 dark:text-slate-100 font-medium">
+              </div>
             </div>
 
             <div>
@@ -324,44 +353,173 @@
   <!-- Real-time Toast Notifications -->
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm"></div>
 
-
   <!-- ========================================================= -->
   <!-- CORE VANILLA JAVASCRIPT ENGINE -->
   <!-- ========================================================= -->
   <script>
     // ---------------------------------------------------------
+    // 0. GOOGLE SHEETS API CONFIGURATION & SETUP GUIDE
+    // ---------------------------------------------------------
+    /*
+      HƯỚNG DẪN KẾT NỐI GOOGLE SHEETS QUA GOOGLE APPS SCRIPT:
+
+      1. Tạo một trang tính Google Sheets mới.
+      2. Đổi tên sheet đầu tiên thành "Tasks".
+      3. Thêm hàng tiêu đề ở dòng 1 (từ cột A đến K) với các nhãn sau:
+         id | projectId | content | startTime | planEndTime | priority | isCompleted | completedAt | evaluation | remarks | deadlineHistory
+      4. Vào "Tiện ích mở rộng" (Extensions) -> Chọn "Apps Script".
+      5. Xóa hết mã mặc định và dán đoạn mã Apps Script sau vào:
+
+      ---------------------------------------------------------------------------------
+      const SPREADSHEET_ID = ""; // Có thể để trống nếu Script gắn liền với trang tính
+
+      function doGet(e) {
+        const sheet = getSheet();
+        const rows = sheet.getDataRange().getValues();
+        const headers = rows[0];
+        const data = [];
+        
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i];
+          const item = {};
+          headers.forEach((header, index) => {
+            item[header] = row[index];
+          });
+          try {
+            item.deadlineHistory = JSON.parse(item.deadlineHistory || "[]");
+          } catch(e) {
+            item.deadlineHistory = [];
+          }
+          data.push(item);
+        }
+        
+        return ContentService.createTextOutput(JSON.stringify(data))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+
+      function doPost(e) {
+        const result = { status: "error", message: "Unknown action" };
+        try {
+          const payload = JSON.parse(e.postData.contents);
+          const action = payload.action;
+          const task = payload.task;
+          const sheet = getSheet();
+          
+          if (action === "create") {
+            sheet.appendRow([
+              task.id,
+              task.projectId,
+              task.content,
+              task.startTime,
+              task.planEndTime,
+              task.priority,
+              task.isCompleted,
+              task.completedAt || "",
+              task.evaluation || "",
+              task.remarks || "",
+              JSON.stringify(task.deadlineHistory || [])
+            ]);
+            result.status = "success";
+            result.message = "Task created successfully";
+          } else if (action === "update") {
+            const data = sheet.getDataRange().getValues();
+            let found = false;
+            for (let i = 1; i < data.length; i++) {
+              if (data[i][0] === task.id) {
+                const rowNum = i + 1;
+                sheet.getRange(rowNum, 1, 1, 11).setValues([[
+                  task.id,
+                  task.projectId,
+                  task.content,
+                  task.startTime,
+                  task.planEndTime,
+                  task.priority,
+                  task.isCompleted,
+                  task.completedAt || "",
+                  task.evaluation || "",
+                  task.remarks || "",
+                  JSON.stringify(task.deadlineHistory || [])
+                ]]);
+                found = true;
+                break;
+              }
+            }
+            if (found) {
+              result.status = "success";
+              result.message = "Task updated successfully";
+            } else {
+              result.message = "Task not found";
+            }
+          } else if (action === "delete") {
+            const taskId = payload.id;
+            const data = sheet.getDataRange().getValues();
+            let found = false;
+            for (let i = 1; i < data.length; i++) {
+              if (data[i][0] === taskId) {
+                sheet.deleteRow(i + 1);
+                found = true;
+                break;
+              }
+            }
+            if (found) {
+              result.status = "success";
+              result.message = "Task deleted successfully";
+            } else {
+              result.message = "Task not found";
+            }
+          }
+        } catch (err) {
+          result.message = err.toString();
+        }
+        
+        return ContentService.createTextOutput(JSON.stringify(result))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+
+      function getSheet() {
+        const ss = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+        let sheet = ss.getSheetByName("Tasks");
+        if (!sheet) {
+          sheet = ss.insertSheet("Tasks");
+          sheet.appendRow(["id", "projectId", "content", "startTime", "planEndTime", "priority", "isCompleted", "completedAt", "evaluation", "remarks", "deadlineHistory"]);
+        }
+        return sheet;
+      }
+      ---------------------------------------------------------------------------------
+
+      6. Nhấp vào "Triển khai" (Deploy) -> chọn "Triển khai mới" (New deployment).
+      7. Chọn loại cấu hình: "Ứng dụng web" (Web app).
+      8. Đặt cấu hình:
+         - Thực thi dưới dạng (Execute as): "Tôi" (Your email).
+         - Ai có quyền truy cập (Who has access): "Mọi người" (Anyone) - BẮT BUỘC để không bị lỗi phân quyền CORS.
+      9. Nhấp vào "Triển khai" và cho phép các quyền truy cập ứng dụng.
+      10. Copy URL Ứng dụng web được cung cấp và dán vào hằng số SCRIPT_URL bên dưới.
+    */
+    const SCRIPT_URL = "script.google.com/macros/s/AKfycbwfSRieJqHfkndimkuQ_M_Ln8OzB-lqT_ZDrbM_-97r_qEjKjpxqvcm_NR09rquykZw/exec";
+
+    // ---------------------------------------------------------
     // 1. STATE & STORAGE PERSISTENCE
     // ---------------------------------------------------------
-    const STORAGE_KEY_PROJECTS = 'kpi_tender_projects_v2';
-    const STORAGE_KEY_TASKS = 'kpi_tender_tasks_v2';
-    const STORAGE_KEY_THEME = 'kpi_tender_theme';
-
-    const safeStorage = {
-      _memory: {},
-      getItem(key) {
-        try { return localStorage.getItem(key); } catch (e) { return this._memory[key] || null; }
-      },
-      setItem(key, value) {
-        try { localStorage.setItem(key, value); } catch (e) { this._memory[key] = String(value); }
-      }
+    // All state is in-memory now. localStorage has been completely removed.
+    const state = {
+      projects: [],
+      tempProjects: [],
+      tasks: [],
+      currentTab: 'dashboard',
+      searchQuery: '',
+      filterStatus: 'all',
+      filterProjectId: 'all',
+      isEvaluatingTaskId: null,
+      evaluatingSelection: 'Dat'
     };
 
     // Realistic Mock Data for Instant Dashboard Display
-    function getMockProjects() {
-      const nowMs = Date.now();
-      return [
-        { id: 'proj-1', name: 'Dự án XL-01: Thi công xây lắp Nhà kỹ thuật cao - Bệnh viện Đa khoa Tỉnh', createdAt: new Date(nowMs - 15 * 24 * 3600 * 1000).toISOString() },
-        { id: 'proj-2', name: 'Dự án TB-05: Cung cấp & lắp đặt hệ thống Phòng cháy chữa cháy - Trụ sở EVN', createdAt: new Date(nowMs - 12 * 24 * 3600 * 1000).toISOString() },
-        { id: 'proj-3', name: 'Dự án TV-03: Tư vấn giám sát thi công xây dựng Cầu vượt nút giao An Phú', createdAt: new Date(nowMs - 10 * 24 * 3600 * 1000).toISOString() }
-      ];
-    }
-
     function getMockTasks() {
       const nowMs = Date.now();
       return [
         {
           id: 'task-1',
-          projectId: 'proj-1',
+          projectId: 'Dự án XL-01: Thi công xây lắp Nhà kỹ thuật cao - Bệnh viện Đa khoa Tỉnh',
           content: 'Nghiên cứu kỹ Hồ sơ mời thầu (HSMT), làm rõ các tiêu chuẩn đánh giá về mặt Kỹ thuật & Tài chính',
           startTime: new Date(nowMs - 2 * 24 * 3600 * 1000).toISOString(),
           planEndTime: new Date(nowMs + 3 * 24 * 3600 * 1000).toISOString(),
@@ -371,7 +529,7 @@
         },
         {
           id: 'task-2',
-          projectId: 'proj-1',
+          projectId: 'Dự án XL-01: Thi công xây lắp Nhà kỹ thuật cao - Bệnh viện Đa khoa Tỉnh',
           content: 'Bóc tách chi tiết khối lượng phần kết cấu móng và lập bảng dự toán chi phí chi tiết theo đơn giá định mức',
           startTime: new Date(nowMs - 5 * 24 * 3600 * 1000).toISOString(),
           planEndTime: new Date(nowMs - 1 * 24 * 3600 * 1000).toISOString(), // Overdue
@@ -388,7 +546,7 @@
         },
         {
           id: 'task-3',
-          projectId: 'proj-2',
+          projectId: 'Dự án TB-05: Cung cấp & lắp đặt hệ thống Phòng cháy chữa cháy - Trụ sở EVN',
           content: 'Lập thuyết minh biện pháp tổ chức thi công PCCC, biểu đồ nhân lực và sơ đồ tiến độ thi công tổng thể',
           startTime: new Date(nowMs - 6 * 24 * 3600 * 1000).toISOString(),
           planEndTime: new Date(nowMs - 3 * 24 * 3600 * 1000).toISOString(),
@@ -401,20 +559,20 @@
         },
         {
           id: 'task-4',
-          projectId: 'proj-2',
+          projectId: 'Dự án TB-05: Cung cấp & lắp đặt hệ thống Phòng cháy chữa cháy - Trụ sở EVN',
           content: 'Làm việc với Ngân hàng BIDV để phát hành Thư bảo lãnh dự thầu trị giá 250 triệu đồng theo đúng mẫu HSMT',
           startTime: new Date(nowMs - 8 * 24 * 3600 * 1000).toISOString(),
           planEndTime: new Date(nowMs - 5 * 24 * 3600 * 1000).toISOString(),
           priority: 'Cao',
           isCompleted: true,
-          completedAt: new Date(nowMs - 4 * 24 * 3600 * 1000).toISOString(), // Delayed completion
+          completedAt: new Date(nowMs - 4 * 24 * 3600 * 1000).toISOString(),
           evaluation: 'KhongDat',
           remarks: 'Ngân hàng yêu cầu bổ sung báo cáo tài chính kiểm toán đột xuất nên bảo lãnh bị muộn 1 ngày so với tiến độ nội bộ. May mắn vẫn kịp đóng thầu chính thức.',
           deadlineHistory: []
         },
         {
           id: 'task-5',
-          projectId: 'proj-3',
+          projectId: 'Dự án TV-03: Tư vấn giám sát thi công xây dựng Cầu vượt nút giao An Phú',
           content: 'Soạn thảo Hồ sơ năng lực pháp lý, tập hợp bằng cấp nhân sự chủ chốt (chỉ huy trưởng, kỹ sư an toàn) và hợp đồng tương tự',
           startTime: new Date(nowMs - 1 * 24 * 3600 * 1000).toISOString(),
           planEndTime: new Date(nowMs + 2 * 24 * 3600 * 1000).toISOString(),
@@ -425,39 +583,145 @@
       ];
     }
 
-    // Main App State
-    let state = {
-      projects: [],
-      tasks: [],
-      currentTab: 'dashboard',
-      searchQuery: '',
-      filterStatus: 'all',
-      filterProjectId: 'all',
-      isEvaluatingTaskId: null,
-      evaluatingSelection: 'Dat'
-    };
+    // Helper to dynamically extract project names from task data
+    function extractProjectsFromTasks() {
+      const uniqueProjectNames = [...new Set(state.tasks.map(t => t.projectId))].filter(Boolean);
+      const projectsList = uniqueProjectNames.map(name => ({
+        id: name,
+        name: name,
+        createdAt: new Date().toISOString()
+      }));
 
-    // Initialize State
-    function initApp() {
-      const storedProj = safeStorage.getItem(STORAGE_KEY_PROJECTS);
-      const storedTasks = safeStorage.getItem(STORAGE_KEY_TASKS);
-      
-      if (storedProj && storedTasks) {
-        state.projects = JSON.parse(storedProj);
-        state.tasks = JSON.parse(storedTasks);
-      } else {
-        // First load defaults
-        state.projects = getMockProjects();
-        state.tasks = getMockTasks();
-        saveState();
+      // Merge with any temp projects created via project tab that don't have tasks assigned yet
+      if (state.tempProjects && state.tempProjects.length > 0) {
+        state.tempProjects.forEach(tp => {
+          if (!projectsList.some(p => p.id === tp.id)) {
+            projectsList.push(tp);
+          }
+        });
       }
 
-      // Initialize Theme
-      const storedTheme = safeStorage.getItem(STORAGE_KEY_THEME) || 'light';
-      setTheme(storedTheme);
+      state.projects = projectsList;
+    }
+
+    // Robust fetch API wrapper
+    async function apiCall(method, payload = null) {
+      if (!SCRIPT_URL || SCRIPT_URL.includes("ĐIỀN_LINK_CỦA_BẠN")) {
+        console.warn("SCRIPT_URL is not configured yet. Running in memory-only simulation.");
+        return null;
+      }
+
+      showLoading(true);
+      try {
+        let response;
+        if (method === 'GET') {
+          response = await fetch(SCRIPT_URL);
+        } else {
+          response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'text/plain;charset=utf-8'
+            },
+            body: JSON.stringify(payload),
+            redirect: 'follow'
+          });
+        }
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data;
+      } catch (err) {
+        console.error("API Connection Error:", err);
+        showToast("Lỗi kết nối đồng bộ Google Sheets! " + err.message, "error");
+        throw err;
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    // Load entire task list from Google Sheets (GET)
+    async function loadOnlineData() {
+      if (!SCRIPT_URL || SCRIPT_URL.includes("ĐIỀN_LINK_CỦA_BẠN")) {
+        if (state.tasks.length === 0) {
+          state.tasks = getMockTasks();
+        }
+        extractProjectsFromTasks();
+        renderApp();
+        return;
+      }
+
+      showLoading(true);
+      try {
+        const data = await apiCall('GET');
+        if (Array.isArray(data)) {
+          state.tasks = data.map(t => ({
+            id: t.id || ('task-' + Date.now() + Math.random().toString(36).substr(2, 5)),
+            projectId: t.projectId || t.projectName || 'Dự án chung',
+            content: t.content || '',
+            startTime: t.startTime || new Date().toISOString(),
+            planEndTime: t.planEndTime || new Date().toISOString(),
+            priority: t.priority || 'Trung bình',
+            isCompleted: (t.isCompleted === true || t.isCompleted === 'true' || t.isCompleted === 'TRUE'),
+            completedAt: t.completedAt || '',
+            evaluation: t.evaluation || '',
+            remarks: t.remarks || '',
+            deadlineHistory: Array.isArray(t.deadlineHistory) ? t.deadlineHistory : (typeof t.deadlineHistory === 'string' ? JSON.parse(t.deadlineHistory || '[]') : [])
+          }));
+          
+          extractProjectsFromTasks();
+          showToast('Đồng bộ dữ liệu trực tuyến thành công!');
+        } else {
+          showToast('Dữ liệu trả về không đúng cấu trúc danh sách!', 'error');
+        }
+      } catch (err) {
+        if (state.tasks.length === 0) {
+          state.tasks = getMockTasks();
+        }
+        extractProjectsFromTasks();
+      } finally {
+        showLoading(false);
+        renderApp();
+      }
+    }
+
+    function checkSheetsConnection() {
+      const banner = document.getElementById('sheets-connection-banner');
+      if (banner) {
+        if (!SCRIPT_URL || SCRIPT_URL.includes("ĐIỀN_LINK_CỦA_BẠN")) {
+          banner.classList.remove('hidden');
+        } else {
+          banner.classList.add('hidden');
+        }
+      }
+    }
+
+    function showLoading(show) {
+      const overlay = document.getElementById('global-loading-overlay');
+      if (overlay) {
+        if (show) {
+          overlay.classList.remove('hidden');
+        } else {
+          overlay.classList.add('hidden');
+        }
+      }
+    }
+
+    // Initialize State
+    async function initApp() {
+      // Light/dark theme control in-memory
+      setTheme('light');
+
+      // Check URL and show connection helper banner
+      checkSheetsConnection();
 
       // Event Listeners setup
       setupEventListeners();
+
+      // Load data from Sheets or fallback mock
+      await loadOnlineData();
 
       // Render App Views
       renderApp();
@@ -472,8 +736,7 @@
     }
 
     function saveState() {
-      safeStorage.setItem(STORAGE_KEY_PROJECTS, JSON.stringify(state.projects));
-      safeStorage.setItem(STORAGE_KEY_TASKS, JSON.stringify(state.tasks));
+      // All data is synchronized online directly. localStorage has been completely removed.
     }
 
     function setTheme(theme) {
@@ -486,7 +749,6 @@
         document.getElementById('theme-sun-icon').classList.add('hidden');
         document.getElementById('theme-moon-icon').classList.remove('hidden');
       }
-      safeStorage.setItem(STORAGE_KEY_THEME, theme);
     }
 
     // ---------------------------------------------------------
@@ -640,6 +902,18 @@
         renderTasksList();
       });
 
+      document.getElementById('task-form-project-id').addEventListener('change', (e) => {
+        const container = document.getElementById('task-form-new-project-container');
+        if (e.target.value === '__NEW__') {
+          container.classList.remove('hidden');
+          document.getElementById('task-form-new-project-name').required = true;
+          document.getElementById('task-form-new-project-name').focus();
+        } else {
+          container.classList.add('hidden');
+          document.getElementById('task-form-new-project-name').required = false;
+        }
+      });
+
       // Project filter buttons
       document.querySelectorAll('.task-filter-tab').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -743,6 +1017,8 @@
         optionsHTML += `<option value="${p.id}">${p.name}</option>`;
         filterHTML += `<option value="${p.id}">${p.name}</option>`;
       });
+
+      optionsHTML += '<option value="__NEW__" class="text-indigo-600 font-bold text-xs">+ Thêm dự án mới...</option>';
 
       formSel.innerHTML = optionsHTML;
       filterSel.innerHTML = filterHTML;
@@ -1503,7 +1779,7 @@
     // ---------------------------------------------------------
     // 7. EVENT HANDLERS & OPERATIONS (CRUD Tasks & Projects)
     // ---------------------------------------------------------
-    function handleTaskFormSubmit(e) {
+    async function handleTaskFormSubmit(e) {
       e.preventDefault();
       const errEl = document.getElementById('task-form-error');
       errEl.classList.add('hidden');
@@ -1531,6 +1807,25 @@
         return;
       }
 
+      let finalProjectId = projectId;
+      if (projectId === '__NEW__') {
+        const customName = document.getElementById('task-form-new-project-name').value.trim();
+        if (!customName) {
+          showFormError('task-form-error', 'Vui lòng nhập tên dự án mới!');
+          return;
+        }
+        finalProjectId = customName;
+        const exists = (state.tempProjects || []).some(tp => tp.name === customName) || state.projects.some(p => p.name === customName);
+        if (!exists) {
+          state.tempProjects = state.tempProjects || [];
+          state.tempProjects.push({
+            id: customName,
+            name: customName,
+            createdAt: new Date().toISOString()
+          });
+        }
+      }
+
       if (taskId) {
         // Edit Mode
         const taskIdx = state.tasks.findIndex(t => t.id === taskId);
@@ -1538,6 +1833,14 @@
           const originalTask = state.tasks[taskIdx];
           const oldDeadline = originalTask.planEndTime;
           const newDeadline = planEndTime;
+
+          // Copy task properties
+          const updatedTask = { ...originalTask };
+          updatedTask.projectId = finalProjectId;
+          updatedTask.content = content;
+          updatedTask.startTime = startTime;
+          updatedTask.planEndTime = planEndTime;
+          updatedTask.priority = priority;
 
           // Check if planEndTime changed
           let originalDateStr = "";
@@ -1557,8 +1860,8 @@
             }
             
             // Record to deadlineHistory
-            originalTask.deadlineHistory = originalTask.deadlineHistory || [];
-            originalTask.deadlineHistory.push({
+            updatedTask.deadlineHistory = Array.isArray(updatedTask.deadlineHistory) ? [...updatedTask.deadlineHistory] : [];
+            updatedTask.deadlineHistory.push({
               oldDeadline: oldDeadline,
               newDeadline: newDeadline,
               reason: reason,
@@ -1566,18 +1869,14 @@
             });
           }
 
-          state.tasks[taskIdx].projectId = projectId;
-          state.tasks[taskIdx].content = content;
-          state.tasks[taskIdx].startTime = startTime;
-          state.tasks[taskIdx].planEndTime = planEndTime;
-          state.tasks[taskIdx].priority = priority;
-          showToast('Đã lưu chỉnh sửa công việc thành công!');
+          resetTaskForm();
+          await syncUpdateTask(updatedTask);
         }
       } else {
         // Create Mode
         const newTask = {
           id: 'task-' + Date.now(),
-          projectId,
+          projectId: finalProjectId,
           content,
           startTime,
           planEndTime,
@@ -1585,13 +1884,9 @@
           isCompleted: false,
           deadlineHistory: []
         };
-        state.tasks.unshift(newTask);
-        showToast('Đã thêm công việc mới vào nhật ký!');
+        resetTaskForm();
+        await syncCreateTask(newTask);
       }
-
-      saveState();
-      resetTaskForm();
-      renderApp();
     }
 
     function showFormError(elId, msg) {
@@ -1635,29 +1930,31 @@
       document.getElementById('task-form-deadline-reason').value = '';
       document.getElementById('task-form-deadline-reason-container').classList.add('hidden');
 
+      // Clear dynamic project container
+      document.getElementById('task-form-new-project-container').classList.add('hidden');
+      document.getElementById('task-form-new-project-name').value = '';
+      document.getElementById('task-form-new-project-name').required = false;
+
       document.getElementById('form-task-title').innerText = 'Thêm Nhiệm Vụ Mới';
       document.getElementById('task-form-cancel-btn').classList.add('hidden');
       document.getElementById('task-form-error').classList.add('hidden');
     }
 
-    function handleDeleteTask(taskId) {
+    async function handleDeleteTask(taskId) {
       if (confirm('Bạn có chắc chắn muốn xóa công việc này khỏi nhật ký theo dõi? Hành động này không thể hoàn tác!')) {
-        state.tasks = state.tasks.filter(t => t.id !== taskId);
-        saveState();
-        renderApp();
-        showToast('Đã xóa công việc khỏi nhật ký thành công!', 'error');
+        await syncDeleteTask(taskId);
       }
     }
 
-    function reopenTask(taskId) {
+    async function reopenTask(taskId) {
       const idx = state.tasks.findIndex(t => t.id === taskId);
       if (idx > -1) {
-        state.tasks[idx].isCompleted = false;
-        delete state.tasks[idx].completedAt;
-        delete state.tasks[idx].evaluation;
-        delete state.tasks[idx].remarks;
-        saveState();
-        renderApp();
+        const updatedTask = { ...state.tasks[idx] };
+        updatedTask.isCompleted = false;
+        updatedTask.completedAt = '';
+        updatedTask.evaluation = '';
+        updatedTask.remarks = '';
+        await syncUpdateTask(updatedTask);
         showToast('Đã khôi phục lại trạng thái đang thực hiện cho công việc!');
       }
     }
@@ -1769,7 +2066,7 @@
       }
     }
 
-    function saveEvaluation() {
+    async function saveEvaluation() {
       const remarks = document.getElementById('eval-remarks').value.trim();
       const errEl = document.getElementById('eval-modal-error');
 
@@ -1781,14 +2078,14 @@
 
       const taskIdx = state.tasks.findIndex(t => t.id === state.isEvaluatingTaskId);
       if (taskIdx > -1) {
-        state.tasks[taskIdx].isCompleted = true;
-        state.tasks[taskIdx].completedAt = new Date().toISOString();
-        state.tasks[taskIdx].evaluation = state.evaluatingSelection;
-        state.tasks[taskIdx].remarks = remarks;
+        const updatedTask = { ...state.tasks[taskIdx] };
+        updatedTask.isCompleted = true;
+        updatedTask.completedAt = new Date().toISOString();
+        updatedTask.evaluation = state.evaluatingSelection;
+        updatedTask.remarks = remarks;
 
-        saveState();
         closeEvalModal();
-        renderApp();
+        await syncUpdateTask(updatedTask);
         showToast('Đã xác nhận hoàn thành công việc thành công!');
       }
     }
@@ -1865,15 +2162,9 @@
     }
 
     // Expose dynamic handlers globally
-    window.triggerResetData = function() {
-      if (confirm('Bạn có chắc chắn muốn đặt lại dữ liệu ban đầu không? Mọi thay đổi hiện tại của bạn sẽ bị mất!')) {
-        localStorage.removeItem(STORAGE_KEY_PROJECTS);
-        localStorage.removeItem(STORAGE_KEY_TASKS);
-        state.projects = getMockProjects();
-        state.tasks = getMockTasks();
-        saveState();
-        renderApp();
-        showToast('Đã đặt lại dữ liệu gốc thành công!');
+    window.triggerResetData = async function() {
+      if (confirm('Bạn có chắc chắn muốn tải lại dữ liệu từ Google Sheets không? Mọi thay đổi chưa được đồng bộ sẽ bị mất!')) {
+        await loadOnlineData();
       }
     };
     
