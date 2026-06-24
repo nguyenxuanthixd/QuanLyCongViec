@@ -153,6 +153,15 @@
               <textarea id="task-form-content" rows="3" placeholder="Ví dụ: Lập thuyết minh biện pháp thi công kết cấu phần ngầm, làm rõ bảng dự toán chi phí thầu..." class="w-full rounded-xl border border-gray-200 dark:border-slate-800 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-850 dark:text-slate-100" required></textarea>
             </div>
 
+            <div>
+              <label class="block text-[10.5px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Mức độ ưu tiên <span class="text-rose-500">*</span></label>
+              <select id="task-form-priority" class="w-full rounded-xl border border-gray-200 dark:border-slate-800 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-850 dark:text-slate-100 font-medium" required>
+                <option value="Thấp">Thấp</option>
+                <option value="Trung bình" selected>Trung bình</option>
+                <option value="Cao">Cao</option>
+              </select>
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block text-[10.5px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Ngày bắt đầu <span class="text-rose-500">*</span></label>
@@ -162,6 +171,14 @@
                 <label class="block text-[10.5px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Hạn kế hoạch <span class="text-rose-500">*</span></label>
                 <input type="datetime-local" id="task-form-plan-end" class="w-full rounded-xl border border-gray-200 dark:border-slate-800 px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-800 dark:text-slate-100" required>
               </div>
+            </div>
+
+            <div id="task-form-deadline-reason-container" class="hidden">
+              <label class="block text-[10.5px] font-bold text-amber-600 dark:text-amber-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                Lý do thay đổi thời hạn <span class="text-rose-500">*</span>
+              </label>
+              <textarea id="task-form-deadline-reason" rows="2" placeholder="Ví dụ: Do bổ sung nhân sự, điều chỉnh thiết kế, thời tiết..." class="w-full rounded-xl border border-amber-200 dark:border-amber-900/40 px-3 py-2 text-xs bg-amber-50/50 dark:bg-amber-950/20 focus:outline-none focus:ring-2 focus:ring-amber-500/20 text-slate-850 dark:text-slate-100"></textarea>
             </div>
 
             <div id="task-form-error" class="hidden text-[11px] text-rose-600 bg-rose-50 dark:bg-rose-950/20 dark:text-rose-450 p-2.5 rounded-xl border border-rose-100 dark:border-rose-950/30"></div>
@@ -348,7 +365,9 @@
           content: 'Nghiên cứu kỹ Hồ sơ mời thầu (HSMT), làm rõ các tiêu chuẩn đánh giá về mặt Kỹ thuật & Tài chính',
           startTime: new Date(nowMs - 2 * 24 * 3600 * 1000).toISOString(),
           planEndTime: new Date(nowMs + 3 * 24 * 3600 * 1000).toISOString(),
-          isCompleted: false
+          priority: 'Cao',
+          isCompleted: false,
+          deadlineHistory: []
         },
         {
           id: 'task-2',
@@ -356,7 +375,16 @@
           content: 'Bóc tách chi tiết khối lượng phần kết cấu móng và lập bảng dự toán chi phí chi tiết theo đơn giá định mức',
           startTime: new Date(nowMs - 5 * 24 * 3600 * 1000).toISOString(),
           planEndTime: new Date(nowMs - 1 * 24 * 3600 * 1000).toISOString(), // Overdue
-          isCompleted: false
+          priority: 'Cao',
+          isCompleted: false,
+          deadlineHistory: [
+            {
+              oldDeadline: new Date(nowMs - 3 * 24 * 3600 * 1000).toISOString(),
+              newDeadline: new Date(nowMs - 1 * 24 * 3600 * 1000).toISOString(),
+              reason: 'Chủ đầu tư thay đổi thiết kế kết cấu móng làm kéo dài tiến độ bóc khối lượng',
+              updatedAt: new Date(nowMs - 4 * 24 * 3600 * 1000).toISOString()
+            }
+          ]
         },
         {
           id: 'task-3',
@@ -364,10 +392,12 @@
           content: 'Lập thuyết minh biện pháp tổ chức thi công PCCC, biểu đồ nhân lực và sơ đồ tiến độ thi công tổng thể',
           startTime: new Date(nowMs - 6 * 24 * 3600 * 1000).toISOString(),
           planEndTime: new Date(nowMs - 3 * 24 * 3600 * 1000).toISOString(),
+          priority: 'Trung bình',
           isCompleted: true,
           completedAt: new Date(nowMs - 4 * 24 * 3600 * 1000).toISOString(),
           evaluation: 'Dat',
-          remarks: 'Biện pháp thi công được trình bày trực quan. Tổ chuyên gia của Chủ đầu tư đánh giá rất cao phương án bố trí và chấm điểm tối đa.'
+          remarks: 'Biện pháp thi công được trình bày trực quan. Tổ chuyên gia của Chủ đầu tư đánh giá rất cao phương án bố trí và chấm điểm tối đa.',
+          deadlineHistory: []
         },
         {
           id: 'task-4',
@@ -375,10 +405,12 @@
           content: 'Làm việc với Ngân hàng BIDV để phát hành Thư bảo lãnh dự thầu trị giá 250 triệu đồng theo đúng mẫu HSMT',
           startTime: new Date(nowMs - 8 * 24 * 3600 * 1000).toISOString(),
           planEndTime: new Date(nowMs - 5 * 24 * 3600 * 1000).toISOString(),
+          priority: 'Cao',
           isCompleted: true,
           completedAt: new Date(nowMs - 4 * 24 * 3600 * 1000).toISOString(), // Delayed completion
           evaluation: 'KhongDat',
-          remarks: 'Ngân hàng yêu cầu bổ sung báo cáo tài chính kiểm toán đột xuất nên bảo lãnh bị muộn 1 ngày so với tiến độ nội bộ. May mắn vẫn kịp đóng thầu chính thức.'
+          remarks: 'Ngân hàng yêu cầu bổ sung báo cáo tài chính kiểm toán đột xuất nên bảo lãnh bị muộn 1 ngày so với tiến độ nội bộ. May mắn vẫn kịp đóng thầu chính thức.',
+          deadlineHistory: []
         },
         {
           id: 'task-5',
@@ -386,7 +418,9 @@
           content: 'Soạn thảo Hồ sơ năng lực pháp lý, tập hợp bằng cấp nhân sự chủ chốt (chỉ huy trưởng, kỹ sư an toàn) và hợp đồng tương tự',
           startTime: new Date(nowMs - 1 * 24 * 3600 * 1000).toISOString(),
           planEndTime: new Date(nowMs + 2 * 24 * 3600 * 1000).toISOString(),
-          isCompleted: false
+          priority: 'Thấp',
+          isCompleted: false,
+          deadlineHistory: []
         }
       ];
     }
@@ -487,6 +521,39 @@
       return `${day}/${month}/${year}`;
     }
 
+    function checkDeadlineChange() {
+      const taskId = document.getElementById('edit-task-id').value;
+      const planEndInput = document.getElementById('task-form-plan-end').value;
+      const reasonContainer = document.getElementById('task-form-deadline-reason-container');
+
+      if (!taskId) {
+        reasonContainer.classList.add('hidden');
+        return;
+      }
+
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!task) {
+        reasonContainer.classList.add('hidden');
+        return;
+      }
+
+      // Convert both to date strings comparing up to minute
+      let originalDateStr = "";
+      let currentDateStr = "";
+      try {
+        originalDateStr = new Date(task.planEndTime).toISOString().substring(0, 16);
+        currentDateStr = new Date(planEndInput).toISOString().substring(0, 16);
+      } catch (e) {
+        // ignore parsing error during typing
+      }
+
+      if (currentDateStr && originalDateStr !== currentDateStr) {
+        reasonContainer.classList.remove('hidden');
+      } else {
+        reasonContainer.classList.add('hidden');
+      }
+    }
+
     function getRemainingTimeText(planEndTimeStr) {
       const diff = new Date(planEndTimeStr).getTime() - Date.now();
       if (diff <= 0) {
@@ -562,6 +629,8 @@
       // Task forms and filters listeners
       document.getElementById('task-form').addEventListener('submit', handleTaskFormSubmit);
       document.getElementById('task-form-cancel-btn').addEventListener('click', resetTaskForm);
+      document.getElementById('task-form-plan-end').addEventListener('input', checkDeadlineChange);
+      document.getElementById('task-form-plan-end').addEventListener('change', checkDeadlineChange);
       document.getElementById('task-search').addEventListener('input', (e) => {
         state.searchQuery = e.target.value.trim().toLowerCase();
         renderTasksList();
@@ -1194,6 +1263,58 @@
         let statusBadge = '';
         let timerElement = '';
 
+        // Priority Level Badge
+        const priority = task.priority || 'Trung bình';
+        let priorityBadge = '';
+        if (priority === 'Cao') {
+          priorityBadge = `
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/30">
+              <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+              Ưu tiên: Cao
+            </span>
+          `;
+        } else if (priority === 'Thấp') {
+          priorityBadge = `
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700/50">
+              <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+              Ưu tiên: Thấp
+            </span>
+          `;
+        } else {
+          priorityBadge = `
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/30">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+              Ưu tiên: Trung bình
+            </span>
+          `;
+        }
+
+        // Deadline history log elements
+        let deadlineHistoryHtml = '';
+        if (task.deadlineHistory && task.deadlineHistory.length > 0) {
+          let historyItems = '';
+          task.deadlineHistory.forEach(hist => {
+            historyItems += `
+              <div class="border-l-2 border-amber-400 dark:border-amber-500 pl-2.5 py-1 text-[11px] text-gray-500 dark:text-slate-400 space-y-1 bg-amber-50/10 dark:bg-amber-950/5 rounded-r-lg">
+                <div class="flex items-center justify-between flex-wrap gap-x-2">
+                  <span class="font-bold text-slate-700 dark:text-slate-300">Gia hạn: ${formatReadableDateOnly(hist.oldDeadline)} <svg class="w-3 h-3 inline text-gray-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg> ${formatReadableDateOnly(hist.newDeadline)}</span>
+                  <span class="text-[9px] text-gray-400 dark:text-slate-500 font-mono">${formatReadableDateOnly(hist.updatedAt)}</span>
+                </div>
+                <p class="italic text-slate-600 dark:text-slate-400 font-sans text-[10.5px]">Lý do: "${hist.reason}"</p>
+              </div>
+            `;
+          });
+          deadlineHistoryHtml = `
+            <div class="mt-3 pt-2 border-t border-gray-150 dark:border-slate-850/65">
+              <span class="font-bold text-[10px] text-amber-600 dark:text-amber-400 uppercase tracking-wider block mb-1.5 flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Lịch sử thay đổi thời hạn
+              </span>
+              <div class="space-y-2 max-h-32 overflow-y-auto pr-1">${historyItems}</div>
+            </div>
+          `;
+        }
+
         if (task.isCompleted) {
           const finishedOnTime = new Date(task.completedAt).getTime() <= new Date(task.planEndTime).getTime();
           statusBadge = `
@@ -1260,7 +1381,8 @@
                 </span>
                 <p class="text-xs sm:text-sm font-bold text-slate-850 dark:text-slate-100 mt-1">${task.content}</p>
               </div>
-              <div class="shrink-0 flex items-center gap-2">
+              <div class="shrink-0 flex items-center gap-2 flex-wrap justify-end">
+                ${priorityBadge}
                 ${statusBadge}
               </div>
             </div>
@@ -1279,6 +1401,7 @@
               </div>
 
               ${timerElement}
+              ${deadlineHistoryHtml}
             </div>
 
             <!-- Action buttons inside task -->
@@ -1390,6 +1513,7 @@
       const content = document.getElementById('task-form-content').value.trim();
       const startTime = document.getElementById('task-form-start-time').value;
       const planEndTime = document.getElementById('task-form-plan-end').value;
+      const priority = document.getElementById('task-form-priority').value;
 
       if (!projectId) {
         showFormError('task-form-error', 'Vui lòng lựa chọn dự án!');
@@ -1411,10 +1535,42 @@
         // Edit Mode
         const taskIdx = state.tasks.findIndex(t => t.id === taskId);
         if (taskIdx > -1) {
+          const originalTask = state.tasks[taskIdx];
+          const oldDeadline = originalTask.planEndTime;
+          const newDeadline = planEndTime;
+
+          // Check if planEndTime changed
+          let originalDateStr = "";
+          let currentDateStr = "";
+          try {
+            originalDateStr = new Date(oldDeadline).toISOString().substring(0, 16);
+            currentDateStr = new Date(newDeadline).toISOString().substring(0, 16);
+          } catch (e) {
+            // parsing fallback
+          }
+
+          if (originalDateStr && currentDateStr && originalDateStr !== currentDateStr) {
+            const reason = document.getElementById('task-form-deadline-reason').value.trim();
+            if (!reason) {
+              showFormError('task-form-error', 'Vui lòng nhập lý do thay đổi thời hạn hoàn thành!');
+              return;
+            }
+            
+            // Record to deadlineHistory
+            originalTask.deadlineHistory = originalTask.deadlineHistory || [];
+            originalTask.deadlineHistory.push({
+              oldDeadline: oldDeadline,
+              newDeadline: newDeadline,
+              reason: reason,
+              updatedAt: new Date().toISOString()
+            });
+          }
+
           state.tasks[taskIdx].projectId = projectId;
           state.tasks[taskIdx].content = content;
           state.tasks[taskIdx].startTime = startTime;
           state.tasks[taskIdx].planEndTime = planEndTime;
+          state.tasks[taskIdx].priority = priority;
           showToast('Đã lưu chỉnh sửa công việc thành công!');
         }
       } else {
@@ -1425,7 +1581,9 @@
           content,
           startTime,
           planEndTime,
-          isCompleted: false
+          priority,
+          isCompleted: false,
+          deadlineHistory: []
         };
         state.tasks.unshift(newTask);
         showToast('Đã thêm công việc mới vào nhật ký!');
@@ -1451,10 +1609,15 @@
       document.getElementById('task-form-content').value = task.content;
       document.getElementById('task-form-start-time').value = task.startTime.substring(0, 16);
       document.getElementById('task-form-plan-end').value = task.planEndTime.substring(0, 16);
+      document.getElementById('task-form-priority').value = task.priority || 'Trung bình';
 
       document.getElementById('form-task-title').innerText = 'Chỉnh sửa Công Việc';
       document.getElementById('task-form-cancel-btn').classList.remove('hidden');
       
+      // Reset deadline reason input & hide container initially
+      document.getElementById('task-form-deadline-reason').value = '';
+      document.getElementById('task-form-deadline-reason-container').classList.add('hidden');
+
       // Auto scroll to form on mobile
       document.getElementById('task-form').scrollIntoView({ behavior: 'smooth' });
     }
@@ -1468,6 +1631,9 @@
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       document.getElementById('task-form-plan-end').value = formatDateTimeLocal(tomorrow);
+      document.getElementById('task-form-priority').value = 'Trung bình';
+      document.getElementById('task-form-deadline-reason').value = '';
+      document.getElementById('task-form-deadline-reason-container').classList.add('hidden');
 
       document.getElementById('form-task-title').innerText = 'Thêm Nhiệm Vụ Mới';
       document.getElementById('task-form-cancel-btn').classList.add('hidden');
