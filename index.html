@@ -1,1642 +1,1525 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="vi">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Quản Lý Công Việc & Hiệu Suất KPI Gói Thầu</title>
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;650;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            colors: {
-              brand: {
-                50: '#eef2ff',
-                100: '#e0e7ff',
-                500: '#6366f1',
-                600: '#4f46e5',
-                700: '#4338ca',
-                950: '#0c0a09',
-              }
-            },
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              display: ['Space Grotesk', 'sans-serif'],
-              mono: ['JetBrains Mono', 'monospace'],
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản Lý Tiến Độ & Hiệu Suất KPI Gói Thầu</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;850&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#312e81',
+              950: '#030014',
             }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Space Grotesk', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
           }
         }
       }
-    </script>
-    
-    <!-- React & ReactDOM CDN -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    
-    <!-- Babel Standalone for In-browser JSX Compilation -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    }
+  </script>
 
-    <!-- Global CSS Styles -->
-    <style type="text/css">
-      body {
-        font-family: 'Inter', sans-serif;
-      }
-      /* Custom scrollbar for premium visuals */
-      ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
-      }
-      ::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      .dark ::-webkit-scrollbar-thumb {
-        background: #334155;
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 4px;
-      }
-      .animate-fade-in {
-        animation: fadeIn 0.3s ease-out forwards;
-      }
-      @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(8px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-    </style>
-  </head>
-  <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
-    <div id="root"></div>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    .dark ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .animate-fade-in { animation: fadeIn 0.25s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-250 pb-12">
 
-    <!-- Main React App Script (Compiled in-browser) -->
-    <script type="text/babel">
-      const { useState, useEffect, useRef, useMemo } = React;
-
-      // =========================================================
-      // 1. SAFE LOCAL STORAGE (Supports running in file:// mode)
-      // =========================================================
-      const safeStorage = {
-        _memory: {},
-        getItem(key) {
-          try {
-            return localStorage.getItem(key);
-          } catch (e) {
-            console.warn("localStorage is not available, using in-memory fallback:", e);
-            return this._memory[key] || null;
-          }
-        },
-        setItem(key, value) {
-          try {
-            localStorage.setItem(key, value);
-          } catch (e) {
-            console.warn("localStorage is not available, using in-memory fallback:", e);
-            this._memory[key] = String(value);
-          }
-        }
-      };
-
-      // =========================================================
-      // 2. OFFLINE-COMPATIBLE SVG ICONS (0 latency, 0 external calls)
-      // =========================================================
-      const Icons = {
-        ClipboardList: (props) => (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
-            <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-            <path d="M12 11h4" /><path d="M12 16h4" /><path d="M8 11h.01" /><path d="M8 16h.01" />
+  <!-- Header -->
+  <header class="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 border-b border-gray-100 dark:border-slate-800 backdrop-blur-sm transition-all duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-indigo-600 rounded-xl text-white">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-        ),
-        FolderPlus: (props) => (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
-            <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z" />
-            <line x1="12" y1="10" x2="12" y2="16" /><line x1="9" y1="13" x2="15" y2="13" />
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold font-display text-gray-900 dark:text-white tracking-tight leading-tight">KPI Đấu Thầu</h1>
+          <p class="text-[10.5px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Hệ Thống Theo Dõi Hiệu Suất Gói Thầu</p>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Theme Toggle -->
+        <button id="theme-toggle-btn" class="p-2 rounded-xl text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition duration-150 cursor-pointer" title="Đổi giao diện Sáng / Tối">
+          <svg id="theme-sun-icon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="5" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
           </svg>
-        ),
-        Folder: (props) => (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+          <svg id="theme-moon-icon" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
           </svg>
-        ),
-        Briefcase: (props) => (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
-            <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+        </button>
+
+        <!-- CSV Export -->
+        <button id="global-export-btn" class="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition duration-150 cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-        ),
-        CheckCircle2: (props) => (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
-            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
-            <path d="m9 12 2 2 4-4" />
+          <span class="hidden sm:inline">Xuất Excel</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation tabs -->
+  <div class="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 transition-all duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex gap-1 overflow-x-auto">
+      <button id="tab-dashboard" class="px-5 py-3.5 text-xs font-bold tracking-wider uppercase border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 transition cursor-pointer flex items-center gap-1.5 shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+        Đo Lường & KPI
+      </button>
+      <button id="tab-tasks" class="px-5 py-3.5 text-xs font-bold tracking-wider uppercase border-b-2 border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition cursor-pointer flex items-center gap-1.5 shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+        Nhật Ký Công Việc
+      </button>
+      <button id="tab-projects" class="px-5 py-3.5 text-xs font-bold tracking-wider uppercase border-b-2 border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition cursor-pointer flex items-center gap-1.5 shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+        Danh Sách Gói Thầu
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+    <!-- Active Overdue Alerts Banner (Crucial Alert Center) -->
+    <div id="alert-banner-container" class="hidden mb-6 animate-fade-in">
+      <div class="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-2xl p-4 flex items-start gap-3 shadow-xs">
+        <div class="p-2 bg-amber-150 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 rounded-xl shrink-0">
+          <svg class="w-5 h-5 animate-bounce" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
-        ),
-        AlertTriangle: (props) => (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
-            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-            <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-          </svg>
-        ),
-        TrendingUp: (props) => (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
-            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-            <polyline points="17 6 23 6 23 12" />
-          </svg>
-        ),
-        CalendarCheck2: (props) => (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-            <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-            <path d="m9 16 2 2 4-4" />
-          </svg>
-        ),
-        FileCheck2: (props) => (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
-            <path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4" />
-            <polyline points="14 2 14 8 20 8" />
-            <path d="m3 15 2 2 4-4" />
-          </svg>
-        ),
-        Trash2: (props) => (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
-            <polyline points="3 6 5 6 21 6" />
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-            <line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" />
-          </svg>
-        ),
-        Check: (props) => (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        ),
-        X: (props) => (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
-            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        ),
-        Award: (props) => (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
-            <circle cx="12" cy="8" r="7" />
-            <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
-          </svg>
-        ),
-        FileDown: (props) => (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7 10 12 15 17 10" />
-            <line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
-        ),
-        RefreshCw: (props) => (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
-            <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
-            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-          </svg>
-        ),
-        Moon: (props) => (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-          </svg>
-        ),
-        Sun: (props) => (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
-            <circle cx="12" cy="12" r="5" />
-            <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-            <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-          </svg>
-        ),
-        Search: (props) => (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-        ),
-        Filter: (props) => (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
-            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-          </svg>
-        ),
-        Info: (props) => (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
-          </svg>
-        )
-      };
+        </div>
+        <div class="flex-1">
+          <h3 id="alert-banner-title" class="text-sm font-bold text-amber-850 dark:text-amber-300">CẢNH BÁO TIẾN ĐỘ: Đang có công việc trễ hạn!</h3>
+          <p id="alert-banner-desc" class="text-xs text-amber-600 dark:text-amber-400/80 mt-0.5">Một số hồ sơ kỹ thuật hoặc pháp lý đã quá thời hạn tự lập kế hoạch nhưng chưa hoàn tất đánh giá.</p>
+        </div>
+      </div>
+    </div>
 
-      const Icon = ({ name, className = "w-4 h-4", ...props }) => {
-        const IconComponent = Icons[name] || Icons.Info;
-        return <IconComponent className={className} {...props} />;
-      };
+    <!-- TAB 1: DASHBOARD & MEASUREMENTS -->
+    <section id="view-dashboard" class="space-y-6">
+      <!-- KPI Stats Grid -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Card 1 -->
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-xs transition-all duration-200 flex items-center gap-3">
+          <div class="p-3 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Tổng Gói Thầu</p>
+            <h4 id="stat-total-projects" class="text-xl font-bold text-gray-900 dark:text-white mt-0.5">0</h4>
+          </div>
+        </div>
+        <!-- Card 2 -->
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-xs transition-all duration-200 flex items-center gap-3">
+          <div class="p-3 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 rounded-xl shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2" /></svg>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Việc Đã Giao</p>
+            <h4 id="stat-total-tasks" class="text-xl font-bold text-gray-900 dark:text-white mt-0.5">0</h4>
+          </div>
+        </div>
+        <!-- Card 3 -->
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-xs transition-all duration-200 flex items-center gap-3">
+          <div class="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Nghiệm Thu KPI</p>
+            <h4 id="stat-completed-tasks" class="text-xl font-bold text-gray-900 dark:text-white mt-0.5">0</h4>
+          </div>
+        </div>
+        <!-- Card 4 -->
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-xs transition-all duration-200 flex items-center gap-3">
+          <div class="p-3 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4" /></svg>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Đang Trễ Hạn</p>
+            <h4 id="stat-overdue-tasks" class="text-xl font-extrabold text-gray-900 dark:text-white mt-0.5">0</h4>
+          </div>
+        </div>
+      </div>
 
-      // =========================================================
-      // 3. CORE UTILITY FUNCTIONS (Formatters & Time calculations)
-      // =========================================================
-      function formatDateTimeLocal(date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${year}-${month}-${day}T${hours}:${minutes}`;
-      }
+      <!-- KPI Radial and Summary Section -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- KPI Percentage Block -->
+        <div class="md:col-span-1 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 flex flex-col items-center justify-center text-center shadow-xs">
+          <span class="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-4">Chỉ Số KPI Hoàn Thành Đúng Hạn</span>
+          
+          <div class="relative w-36 h-36 flex items-center justify-center">
+            <!-- Circular Progress SVG -->
+            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="40" stroke="currentColor" stroke-width="8" fill="transparent" class="text-slate-100 dark:text-slate-850" />
+              <circle id="kpi-radial-circle" cx="50" cy="50" r="40" stroke="currentColor" stroke-width="8" fill="transparent" stroke-dasharray="251.2" stroke-dashoffset="100" stroke-linecap="round" class="text-indigo-600 dark:text-indigo-400 transition-all duration-500" />
+            </svg>
+            <div class="absolute flex flex-col items-center">
+              <span id="kpi-percentage-text" class="text-3xl font-extrabold font-display text-gray-900 dark:text-white">0%</span>
+              <span class="text-[10px] font-bold text-gray-450 dark:text-slate-400 tracking-wider">ĐÚNG HẠN</span>
+            </div>
+          </div>
 
-      function formatReadableDateTime(isoString) {
-        if (!isoString) return '';
-        const date = new Date(isoString);
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        return `${hours}:${minutes} ngày ${day}/${month}/${year}`;
-      }
+          <div class="mt-6 w-full grid grid-cols-2 gap-2 text-left border-t border-gray-100 dark:border-slate-800 pt-4">
+            <div>
+              <p class="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase">Xử lý đúng hạn</p>
+              <p id="kpi-count-on-time" class="text-sm font-bold text-indigo-650 dark:text-indigo-400">0 việc</p>
+            </div>
+            <div>
+              <p class="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase">Tổng nghiệm thu</p>
+              <p id="kpi-count-total-completed" class="text-sm font-bold text-slate-800 dark:text-slate-350">0 việc</p>
+            </div>
+          </div>
+        </div>
 
-      function getRemainingTimeText(planEndTimeStr) {
-        const diff = new Date(planEndTimeStr).getTime() - Date.now();
+        <!-- KPI Breakdown and Chart by Projects -->
+        <div class="md:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 shadow-xs flex flex-col">
+          <div class="mb-4">
+            <h3 class="font-bold text-sm text-gray-900 dark:text-white uppercase tracking-wider">Tiến Độ Theo Từng Gói Thầu</h3>
+            <p class="text-xs text-gray-550 dark:text-slate-400 mt-0.5">Tỷ lệ công việc hoàn thành và tỷ lệ đạt chất lượng nghiệm thu kỹ thuật</p>
+          </div>
+          
+          <div id="project-kpi-bars-container" class="space-y-4 flex-1">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+      </div>
 
-        if (diff <= 0) {
-          return { text: 'TRỄ HẸN', isOverdue: true };
-        }
+      <!-- Historical Remarks / Lessons Learned -->
+      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 shadow-xs">
+        <div class="mb-4">
+          <h3 class="font-bold text-sm text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+            <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+            Nhật Ký Nhận Xét & Bài Học Kinh Nghiệm Gói Thầu
+          </h3>
+          <p class="text-xs text-gray-550 dark:text-slate-400 mt-0.5">Lưu trữ các giải pháp sửa lỗi, nhận xét chuyên gia, hỗ trợ cải thiện năng lực kỹ thuật các lần sau</p>
+        </div>
 
-        const minutesTotal = Math.floor(diff / (60 * 1000));
-        const hoursTotal = Math.floor(diff / (60 * 60 * 1000));
-        const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+        <div id="lessons-learned-container" class="space-y-3 max-h-[280px] overflow-y-auto pr-1">
+          <!-- Injected by JS -->
+        </div>
+      </div>
 
-        if (days > 0) {
-          const remainingHours = hoursTotal % 24;
-          return {
-            text: `Còn ${days} ngày${remainingHours > 0 ? ` ${remainingHours} giờ` : ''}`,
-            isOverdue: false,
-          };
-        }
+      <!-- Quick Reset System Data Button -->
+      <div class="flex justify-center">
+        <button id="reset-system-btn" class="flex items-center gap-1.5 px-4 py-2 border border-gray-200 dark:border-slate-800 rounded-xl text-xs text-gray-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition cursor-pointer font-medium">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+          Đặt Lại Toàn Bộ Dữ Liệu Góc (Reset)
+        </button>
+      </div>
+    </section>
 
-        if (hoursTotal > 0) {
-          const remainingMinutes = minutesTotal % 60;
-          return {
-            text: `Còn ${hoursTotal} giờ${remainingMinutes > 0 ? ` ${remainingMinutes} phút` : ''}`,
-            isOverdue: false,
-          };
-        }
+    <!-- TAB 2: DETAILED TASKS LOG -->
+    <section id="view-tasks" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Task Form column (1/3) -->
+      <div class="lg:col-span-1 space-y-4">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 shadow-xs">
+          <div class="border-b border-gray-100 dark:border-slate-850 pb-3 mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <h3 id="form-task-title" class="font-bold text-sm text-gray-900 dark:text-white uppercase tracking-wider">Thêm Nhiệm Vụ Mới</h3>
+          </div>
 
-        return {
-          text: `Còn ${minutesTotal > 0 ? minutesTotal : 1} phút`,
-          isOverdue: false,
-        };
-      }
-
-      function getMockProjects() {
-        const nowMs = Date.now();
-        return [
-          {
-            id: 'proj-1',
-            name: 'Gói thầu XL-01: Thi công xây lắp Nhà kỹ thuật cao - Bệnh viện Đa khoa Tỉnh',
-            createdAt: new Date(nowMs - 15 * 24 * 3600 * 1000).toISOString(),
-          },
-          {
-            id: 'proj-2',
-            name: 'Gói thầu TB-05: Cung cấp & lắp đặt hệ thống Phòng cháy chữa cháy - Trụ sở EVN',
-            createdAt: new Date(nowMs - 12 * 24 * 3600 * 1000).toISOString(),
-          },
-          {
-            id: 'proj-3',
-            name: 'Gói thầu TV-03: Tư vấn giám sát thi công xây dựng Cầu vượt nút giao An Phú',
-            createdAt: new Date(nowMs - 10 * 24 * 3600 * 1000).toISOString(),
-          },
-        ];
-      }
-
-      function getMockTasks() {
-        const nowMs = Date.now();
-
-        return [
-          {
-            id: 'task-1',
-            projectId: 'proj-1',
-            content: 'Nghiên cứu kỹ Hồ sơ mời thầu (HSMT), làm rõ các tiêu chuẩn đánh giá về mặt Kỹ thuật & Tài chính',
-            startTime: new Date(nowMs - 2 * 24 * 3600 * 1000).toISOString(),
-            planEndTime: new Date(nowMs + 3 * 24 * 3600 * 1000).toISOString(),
-            isCompleted: false,
-          },
-          {
-            id: 'task-2',
-            projectId: 'proj-1',
-            content: 'Bóc tách chi tiết khối lượng phần kết cấu móng và lập bảng dự toán chi phí chi tiết theo đơn giá định mức',
-            startTime: new Date(nowMs - 5 * 24 * 3600 * 1000).toISOString(),
-            planEndTime: new Date(nowMs - 1 * 24 * 3600 * 1000).toISOString(),
-            isCompleted: false,
-          },
-          {
-            id: 'task-3',
-            projectId: 'proj-2',
-            content: 'Lập thuyết minh biện pháp tổ chức thi công PCCC, biểu đồ nhân lực và sơ đồ tiến độ thi công tổng thể',
-            startTime: new Date(nowMs - 6 * 24 * 3600 * 1000).toISOString(),
-            planEndTime: new Date(nowMs - 3 * 24 * 3600 * 1000).toISOString(),
-            isCompleted: true,
-            completedAt: new Date(nowMs - 4 * 24 * 3600 * 1000).toISOString(),
-            evaluation: 'Dat',
-            remarks: 'Biện pháp thi công trình bày trực quan bằng bản vẽ 3D cụ thể, tổ chuyên gia của Chủ đầu tư đánh giá rất cao và chấm điểm kỹ thuật tối đa.',
-          },
-          {
-            id: 'task-4',
-            projectId: 'proj-2',
-            content: 'Làm việc với Ngân hàng BIDV để phát hành Thư bảo lãnh dự thầu trị giá 250 triệu đồng theo đúng mẫu HSMT',
-            startTime: new Date(nowMs - 8 * 24 * 3600 * 1000).toISOString(),
-            planEndTime: new Date(nowMs - 5 * 24 * 3600 * 1000).toISOString(),
-            isCompleted: true,
-            completedAt: new Date(nowMs - 4 * 24 * 3600 * 1000).toISOString(),
-            evaluation: 'KhongDat',
-            remarks: 'Ngân hàng yêu cầu bổ sung báo cáo kiểm toán tài chính đột xuất dẫn đến thư bảo lãnh ra muộn 1 ngày so với tiến độ nội bộ. May mắn vẫn kịp thời hạn nộp thầu chính thức. Cần liên hệ ngân hàng chuẩn bị hồ sơ trước 5 ngày cho các gói sau.',
-          },
-          {
-            id: 'task-5',
-            projectId: 'proj-3',
-            content: 'Soạn thảo Hồ sơ năng lực pháp lý, tập hợp bằng cấp nhân sự chủ chốt (chỉ huy trưởng, kỹ sư an toàn) và các hợp đồng tương tự',
-            startTime: new Date(nowMs - 1 * 24 * 3600 * 1000).toISOString(),
-            planEndTime: new Date(nowMs + 2 * 24 * 3600 * 1000).toISOString(),
-            isCompleted: false,
-          },
-          {
-            id: 'task-6',
-            projectId: 'proj-3',
-            content: 'Kiểm tra toàn bộ tính pháp lý của hồ sơ, ký số số liệu tài chính và thực hiện nộp Hồ sơ đề xuất trên Hệ thống mạng đấu thầu quốc gia',
-            startTime: new Date(nowMs - 7 * 24 * 3600 * 1000).toISOString(),
-            planEndTime: new Date(nowMs - 6 * 24 * 3600 * 1000).toISOString(),
-            isCompleted: true,
-            completedAt: new Date(nowMs - 7 * 24 * 3600 * 1000).toISOString(),
-            evaluation: 'Dat',
-            remarks: 'Nộp thầu thành công trước giờ đóng thầu 3 tiếng. Toàn bộ file đính kèm PDF đã tối ưu dung lượng tốt, hệ thống mạng đấu thầu phản hồi biên nhận nhanh chóng.',
-          },
-        ];
-      }
-
-      function exportTasksToCSV(projects, tasks) {
-        const headers = [
-          'Mã công việc',
-          'Tên Dự án/Gói thầu',
-          'Nội dung công việc',
-          'Thời gian bắt đầu',
-          'Hạn chót kế hoạch',
-          'Trạng thái',
-          'Thời gian thực tế hoàn thành',
-          'Kết quả đánh giá',
-          'Nhận xét / Bài học rút ra'
-        ];
-
-        const rows = tasks.map(task => {
-          const project = projects.find(p => p.id === task.projectId);
-          const projectName = project ? project.name : 'Không xác định';
-
-          let statusText = 'Đang thực hiện';
-          if (task.isCompleted) {
-            statusText = 'Đã hoàn thành';
-          } else {
-            const isOverdue = new Date(task.planEndTime).getTime() < Date.now();
-            if (isOverdue) {
-              statusText = 'Trễ hạn';
-            }
-          }
-
-          const evalText = task.isCompleted
-            ? (task.evaluation === 'Dat' ? 'Đạt yêu cầu' : 'Không đạt')
-            : 'Chưa đánh giá';
-
-          return [
-            task.id,
-            projectName,
-            task.content,
-            formatReadableDateTime(task.startTime),
-            formatReadableDateTime(task.planEndTime),
-            statusText,
-            task.completedAt ? formatReadableDateTime(task.completedAt) : '',
-            evalText,
-            task.remarks || ''
-          ];
-        });
-
-        const csvContent = [
-          headers.map(h => `"${h.replace(/"/g, '""')}"`).join(','),
-          ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-        ].join('\r\n');
-
-        const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], {
-          type: 'text/csv;charset=utf-8;'
-        });
-
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        
-        const date = new Date();
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        const dateStr = `${day}-${month}-${year}`;
-        
-        link.href = url;
-        link.setAttribute('download', `Bao_Cao_Theo_Doi_Va_Hieu_Suat_KPI_${dateStr}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }
-
-      // =========================================================
-      // 4. SUB-COMPONENT: TASK FORM (Includes project creator)
-      // =========================================================
-      function TaskForm({ projects, onAddTask, onAddProject }) {
-        const [selectedProjectId, setSelectedProjectId] = useState('');
-        const [content, setContent] = useState('');
-        
-        const [startTime, setStartTime] = useState(() => formatDateTimeLocal(new Date()));
-        const [planEndTime, setPlanEndTime] = useState(() => {
-          const tomorrow = new Date();
-          tomorrow.setDate(tomorrow.getDate() + 1);
-          return formatDateTimeLocal(tomorrow);
-        });
-
-        const [isAddingProject, setIsAddingProject] = useState(false);
-        const [newProjectName, setNewProjectName] = useState('');
-        const [projectError, setProjectError] = useState('');
-        const [formError, setFormError] = useState('');
-        const [successMsg, setSuccessMsg] = useState('');
-
-        const handleQuickAddProject = () => {
-          if (!newProjectName.trim()) {
-            setProjectError('Vui lòng nhập tên dự án!');
-            return;
-          }
-          const newId = onAddProject(newProjectName.trim());
-          setSelectedProjectId(newId);
-          setNewProjectName('');
-          setIsAddingProject(false);
-          setProjectError('');
-        };
-
-        const handleSubmit = (e) => {
-          e.preventDefault();
-          setFormError('');
-          setSuccessMsg('');
-
-          if (!selectedProjectId) {
-            setFormError('Vui lòng chọn hoặc thêm một dự án!');
-            return;
-          }
-          if (!content.trim()) {
-            setFormError('Vui lòng nhập nội dung công việc!');
-            return;
-          }
-          if (!startTime) {
-            setFormError('Vui lòng chọn thời gian bắt đầu!');
-            return;
-          }
-          if (!planEndTime) {
-            setFormError('Vui lòng chọn kế hoạch hoàn thành!');
-            return;
-          }
-
-          const startMs = new Date(startTime).getTime();
-          const endMs = new Date(planEndTime).getTime();
-
-          if (endMs <= startMs) {
-            setFormError('Kế hoạch hoàn thành phải sau Thời gian bắt đầu!');
-            return;
-          }
-
-          onAddTask({
-            projectId: selectedProjectId,
-            content: content.trim(),
-            startTime,
-            planEndTime,
-          });
-
-          setContent('');
-          setStartTime(formatDateTimeLocal(new Date()));
-          const nextDay = new Date();
-          nextDay.setDate(nextDay.getDate() + 1);
-          setPlanEndTime(formatDateTimeLocal(nextDay));
-
-          setSuccessMsg('Đã thêm công việc mới thành công!');
-          setTimeout(() => {
-            setSuccessMsg('');
-          }, 3000);
-        };
-
-        return (
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 shadow-sm transition-all duration-200">
-            <div className="flex items-center gap-2.5 mb-5 border-b border-gray-100 dark:border-slate-800 pb-3">
-              <Icon name="ClipboardList" className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-              <h3 className="font-bold text-lg text-gray-800 dark:text-white">Thêm Công Việc Giao Thầu Mới</h3>
+          <form id="task-form" class="space-y-4">
+            <input type="hidden" id="edit-task-id" value="">
+            
+            <div>
+              <label class="block text-[10.5px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Dự Án / Gói Thầu <span class="text-rose-500">*</span></label>
+              <select id="task-form-project-id" class="w-full rounded-xl border border-gray-200 dark:border-slate-800 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-850 dark:text-slate-100 font-medium" required>
+                <!-- Injected by JS -->
+              </select>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label class="block text-[10.5px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Nội dung công việc <span class="text-rose-500">*</span></label>
+              <textarea id="task-form-content" rows="3" placeholder="Ví dụ: Lập thuyết minh biện pháp thi công kết cấu phần ngầm, làm rõ bảng dự toán chi phí thầu..." class="w-full rounded-xl border border-gray-200 dark:border-slate-800 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-850 dark:text-slate-100" required></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
-                  Chọn Dự án / Gói thầu <span className="text-red-500">*</span>
-                </label>
-
-                {!isAddingProject ? (
-                  <div className="flex gap-2">
-                    <select
-                      id="project-select"
-                      className="flex-1 rounded-xl border border-gray-200 dark:border-slate-800 px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-950 text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition duration-150"
-                      value={selectedProjectId}
-                      onChange={(e) => setSelectedProjectId(e.target.value)}
-                    >
-                      <option value="">-- Chọn Dự án / Gói thầu --</option>
-                      {projects.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      id="toggle-add-project-btn"
-                      onClick={() => setIsAddingProject(true)}
-                      className="flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/70 px-4 py-2.5 rounded-xl text-xs font-semibold transition duration-150 border border-indigo-100/50 dark:border-indigo-900/30"
-                      title="Thêm nhanh Dự án mới"
-                    >
-                      <Icon name="FolderPlus" className="w-4 h-4 mr-1.5" />
-                      <span>Tạo mới</span>
-                    </button>
-                  </div>
-                ) : (
-                  <div className="bg-indigo-50/30 dark:bg-indigo-950/20 p-4 rounded-xl border border-indigo-100/30 dark:border-indigo-900/20 space-y-2.5 animate-fade-in">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Tạo dự án / Gói thầu mới</span>
-                      <button
-                        type="button"
-                        id="cancel-add-project-btn"
-                        onClick={() => setIsAddingProject(false)}
-                        className="text-gray-400 hover:text-gray-650 dark:hover:text-white"
-                      >
-                        <Icon name="X" className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        id="new-project-input"
-                        placeholder="Nhập tên gói thầu / dự án chi tiết..."
-                        className="flex-1 rounded-xl border border-gray-200 dark:border-slate-800 px-3.5 py-2 text-sm bg-white dark:bg-slate-950 text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                        value={newProjectName}
-                        onChange={(e) => setNewProjectName(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handleQuickAddProject();
-                          }
-                        }}
-                        autoFocus
-                      />
-                      <button
-                        type="button"
-                        id="save-project-btn"
-                        onClick={handleQuickAddProject}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 py-2 transition duration-150 flex items-center justify-center font-semibold text-sm"
-                      >
-                        <Icon name="Check" className="w-4 h-4 mr-1" /> Lưu
-                      </button>
-                    </div>
-                    {projectError && <p className="text-xs text-red-500">{projectError}</p>}
-                  </div>
-                )}
+                <label class="block text-[10.5px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Ngày bắt đầu <span class="text-rose-500">*</span></label>
+                <input type="datetime-local" id="task-form-start-time" class="w-full rounded-xl border border-gray-200 dark:border-slate-800 px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-800 dark:text-slate-100" required>
               </div>
-
               <div>
-                <label className="block text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
-                  Nội dung công việc cụ thể <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  id="task-content-input"
-                  rows={3}
-                  placeholder="Mô tả cụ thể khối lượng công việc, yêu cầu chất lượng và nội dung cần lập/phê duyệt..."
-                  className="w-full rounded-xl border border-gray-200 dark:border-slate-800 px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-950 text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-gray-400 dark:placeholder:text-slate-600 transition duration-155"
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                />
+                <label class="block text-[10.5px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Hạn kế hoạch <span class="text-rose-500">*</span></label>
+                <input type="datetime-local" id="task-form-plan-end" class="w-full rounded-xl border border-gray-200 dark:border-slate-800 px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-800 dark:text-slate-100" required>
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
-                    Thời gian bắt đầu <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="datetime-local"
-                    id="start-time-input"
-                    className="w-full rounded-xl border border-gray-200 dark:border-slate-800 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-950"
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
-                    Hạn chót hoàn thành <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="datetime-local"
-                    id="plan-end-time-input"
-                    className="w-full rounded-xl border border-gray-200 dark:border-slate-800 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-950"
-                    value={planEndTime}
-                    onChange={(e) => setPlanEndTime(e.target.value)}
-                  />
-                </div>
-              </div>
+            <div id="task-form-error" class="hidden text-[11px] text-rose-600 bg-rose-50 dark:bg-rose-950/20 dark:text-rose-450 p-2.5 rounded-xl border border-rose-100 dark:border-rose-950/30"></div>
 
-              {formError && (
-                <div className="bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 text-xs px-3.5 py-2.5 rounded-xl border border-rose-100 dark:border-rose-900/30 font-medium">
-                  {formError}
-                </div>
-              )}
-              {successMsg && (
-                <div className="bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 text-xs px-3.5 py-2.5 rounded-xl border border-emerald-100 dark:border-emerald-900/30 flex items-center gap-1.5 font-medium">
-                  <Icon name="Check" className="w-4 h-4 shrink-0" />
-                  <span>{successMsg}</span>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                id="add-task-submit-btn"
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-3 px-4 font-bold text-sm transition duration-150 flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:translate-y-0.5"
-              >
-                <Icon name="CheckCircle2" className="w-5 h-5" />
-                <span>Thêm Vào Nhật Ký Công Việc</span>
+            <div class="flex gap-2 pt-2">
+              <button type="button" id="task-form-cancel-btn" class="hidden flex-1 px-3 py-2 border border-gray-200 dark:border-slate-800 text-gray-500 dark:text-slate-400 rounded-xl text-xs font-semibold hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer">
+                Hủy Sửa
               </button>
+              <button type="submit" id="task-form-submit-btn" class="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition cursor-pointer">
+                Lưu Công Việc
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Task Lists & Filters column (2/3) -->
+      <div class="lg:col-span-2 space-y-4">
+        <!-- Controls & Filters Bar -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-4 shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
+          <!-- Search input -->
+          <div class="relative w-full md:w-64">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
+            </span>
+            <input type="text" id="task-search" placeholder="Tìm nội dung công việc..." class="w-full pl-9 pr-4 py-2 rounded-xl border border-gray-200 dark:border-slate-800 text-xs bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+          </div>
+
+          <!-- Project selector -->
+          <div class="w-full md:w-52">
+            <select id="task-filter-project" class="w-full rounded-xl border border-gray-200 dark:border-slate-800 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100">
+              <option value="all">Tất cả gói thầu</option>
+              <!-- Injected by JS -->
+            </select>
+          </div>
+
+          <!-- Quick Filters Status tabs -->
+          <div class="flex border border-gray-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-1 rounded-xl w-full md:w-auto overflow-x-auto">
+            <button data-filter="all" class="task-filter-tab flex-1 md:flex-initial px-3 py-1.5 text-[11px] font-bold rounded-lg text-indigo-600 bg-white dark:bg-slate-900 shadow-xs cursor-pointer">Tất cả</button>
+            <button data-filter="pending" class="task-filter-tab flex-1 md:flex-initial px-3 py-1.5 text-[11px] font-bold rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white cursor-pointer">Chưa xong</button>
+            <button data-filter="completed" class="task-filter-tab flex-1 md:flex-initial px-3 py-1.5 text-[11px] font-bold rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white cursor-pointer">Nghiệm thu</button>
+            <button data-filter="overdue" class="task-filter-tab flex-1 md:flex-initial px-3 py-1.5 text-[11px] font-bold rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white cursor-pointer">Trễ hạn</button>
+          </div>
+        </div>
+
+        <!-- Dynamic Tasks Log List -->
+        <div id="tasks-log-list" class="space-y-3">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: PROJECTS LIST -->
+    <section id="view-projects" class="hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- New Project Form Column (1/3) -->
+        <div class="lg:col-span-1">
+          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 shadow-xs">
+            <div class="border-b border-gray-100 dark:border-slate-850 pb-3 mb-4 flex items-center gap-2">
+              <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <h3 id="form-project-title" class="font-bold text-sm text-gray-900 dark:text-white uppercase tracking-wider">Tạo Gói Thầu Mới</h3>
+            </div>
+
+            <form id="project-form" class="space-y-4">
+              <input type="hidden" id="edit-project-id" value="">
+              <div>
+                <label class="block text-[10.5px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Tên gói thầu / dự án <span class="text-rose-500">*</span></label>
+                <textarea id="project-form-name" rows="3" placeholder="Ví dụ: Gói thầu XL-01: Thiết kế thi công xây lắp và cung cấp thiết bị Khối phòng khám..." class="w-full rounded-xl border border-gray-200 dark:border-slate-800 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-850 dark:text-slate-100" required></textarea>
+              </div>
+
+              <div id="project-form-error" class="hidden text-[11px] text-rose-600 bg-rose-50 dark:bg-rose-950/20 p-2 rounded-xl"></div>
+
+              <div class="flex gap-2">
+                <button type="button" id="project-form-cancel-btn" class="hidden flex-1 px-3 py-2 border border-gray-200 dark:border-slate-800 text-gray-500 dark:text-slate-400 rounded-xl text-xs font-semibold hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer">
+                  Hủy Sửa
+                </button>
+                <button type="submit" id="project-form-submit-btn" class="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm cursor-pointer">
+                  Lưu Gói Thầu
+                </button>
+              </div>
             </form>
           </div>
-        );
+        </div>
+
+        <!-- Projects list with metrics (2/3) -->
+        <div class="lg:col-span-2">
+          <div id="projects-grid-container" class="space-y-4">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- POPUP EVALUATION MODAL (KPI / Audit completion) -->
+  <div id="evaluation-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+    <div class="w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-150 dark:border-slate-800 overflow-hidden transform transition-all animate-fade-in">
+      <div class="flex items-center justify-between px-6 py-4 bg-slate-50 dark:bg-slate-950/45 border-b border-gray-100 dark:border-slate-850">
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-450" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <h3 class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">Đánh Giá & Nghiệm Thu KPI</h3>
+        </div>
+        <button id="close-eval-modal-btn" type="button" class="text-gray-400 hover:text-gray-650 dark:hover:text-white p-1 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition duration-150 cursor-pointer">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <div>
+          <span class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Nhiệm vụ nghiệm thu:</span>
+          <p id="eval-task-content" class="text-xs font-medium text-slate-700 dark:text-slate-300 bg-indigo-50/50 dark:bg-indigo-950/30 p-3 rounded-xl border border-indigo-100/30 dark:border-indigo-950/40 italic">"..."</p>
+        </div>
+
+        <div>
+          <label class="block text-[10.5px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2">Đánh Giá Chất Lượng Hồ Sơ <span class="text-rose-500">*</span></label>
+          <div class="grid grid-cols-2 gap-3">
+            <button id="eval-opt-pass" type="button" class="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-400 ring-4 ring-emerald-500/10 font-bold text-xs transition">
+              <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+              ĐẠT YÊU CẦU
+            </button>
+            <button id="eval-opt-fail" type="button" class="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-gray-500 dark:text-slate-400 font-bold text-xs transition">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4" /></svg>
+              CHƯA ĐẠT
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[10.5px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Nhận xét chất lượng / Bài học & Sửa đổi <span class="text-rose-500">*</span></label>
+          <textarea id="eval-remarks" rows="3" placeholder="Ghi chú kinh nghiệm hoàn thành, lý do hoặc cách giải quyết vấn đề..." class="w-full rounded-xl border border-gray-200 dark:border-slate-800 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 text-slate-850 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" required></textarea>
+        </div>
+
+        <div id="eval-modal-error" class="hidden text-xs text-rose-600 bg-rose-50 dark:bg-rose-950/20 p-2 rounded-xl"></div>
+      </div>
+
+      <div class="flex justify-end gap-2 px-6 py-4 bg-slate-50 dark:bg-slate-950/45 border-t border-gray-100 dark:border-slate-850">
+        <button id="close-eval-modal-footer-btn" type="button" class="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-slate-400 bg-white dark:bg-slate-950 hover:bg-gray-100 dark:hover:bg-slate-800 border border-gray-200 dark:border-slate-850 rounded-xl transition cursor-pointer">Đóng</button>
+        <button id="save-eval-btn" type="button" class="px-5 py-2 text-xs font-bold text-white bg-indigo-650 hover:bg-indigo-700 rounded-xl shadow-md transition cursor-pointer">Lưu Nghiệm Thu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Real-time Toast Notifications -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm"></div>
+
+
+  <!-- ========================================================= -->
+  <!-- CORE VANILLA JAVASCRIPT ENGINE -->
+  <!-- ========================================================= -->
+  <script>
+    // ---------------------------------------------------------
+    // 1. STATE & STORAGE PERSISTENCE
+    // ---------------------------------------------------------
+    const STORAGE_KEY_PROJECTS = 'kpi_tender_projects_v2';
+    const STORAGE_KEY_TASKS = 'kpi_tender_tasks_v2';
+    const STORAGE_KEY_THEME = 'kpi_tender_theme';
+
+    const safeStorage = {
+      _memory: {},
+      getItem(key) {
+        try { return localStorage.getItem(key); } catch (e) { return this._memory[key] || null; }
+      },
+      setItem(key, value) {
+        try { localStorage.setItem(key, value); } catch (e) { this._memory[key] = String(value); }
+      }
+    };
+
+    // Realistic Mock Data for Instant Dashboard Display
+    function getMockProjects() {
+      const nowMs = Date.now();
+      return [
+        { id: 'proj-1', name: 'Gói thầu XL-01: Thi công xây lắp Nhà kỹ thuật cao - Bệnh viện Đa khoa Tỉnh', createdAt: new Date(nowMs - 15 * 24 * 3600 * 1000).toISOString() },
+        { id: 'proj-2', name: 'Gói thầu TB-05: Cung cấp & lắp đặt hệ thống Phòng cháy chữa cháy - Trụ sở EVN', createdAt: new Date(nowMs - 12 * 24 * 3600 * 1000).toISOString() },
+        { id: 'proj-3', name: 'Gói thầu TV-03: Tư vấn giám sát thi công xây dựng Cầu vượt nút giao An Phú', createdAt: new Date(nowMs - 10 * 24 * 3600 * 1000).toISOString() }
+      ];
+    }
+
+    function getMockTasks() {
+      const nowMs = Date.now();
+      return [
+        {
+          id: 'task-1',
+          projectId: 'proj-1',
+          content: 'Nghiên cứu kỹ Hồ sơ mời thầu (HSMT), làm rõ các tiêu chuẩn đánh giá về mặt Kỹ thuật & Tài chính',
+          startTime: new Date(nowMs - 2 * 24 * 3600 * 1000).toISOString(),
+          planEndTime: new Date(nowMs + 3 * 24 * 3600 * 1000).toISOString(),
+          isCompleted: false
+        },
+        {
+          id: 'task-2',
+          projectId: 'proj-1',
+          content: 'Bóc tách chi tiết khối lượng phần kết cấu móng và lập bảng dự toán chi phí chi tiết theo đơn giá định mức',
+          startTime: new Date(nowMs - 5 * 24 * 3600 * 1000).toISOString(),
+          planEndTime: new Date(nowMs - 1 * 24 * 3600 * 1000).toISOString(), // Overdue
+          isCompleted: false
+        },
+        {
+          id: 'task-3',
+          projectId: 'proj-2',
+          content: 'Lập thuyết minh biện pháp tổ chức thi công PCCC, biểu đồ nhân lực và sơ đồ tiến độ thi công tổng thể',
+          startTime: new Date(nowMs - 6 * 24 * 3600 * 1000).toISOString(),
+          planEndTime: new Date(nowMs - 3 * 24 * 3600 * 1000).toISOString(),
+          isCompleted: true,
+          completedAt: new Date(nowMs - 4 * 24 * 3600 * 1000).toISOString(),
+          evaluation: 'Dat',
+          remarks: 'Biện pháp thi công được trình bày trực quan. Tổ chuyên gia của Chủ đầu tư đánh giá rất cao phương án bố trí và chấm điểm tối đa.'
+        },
+        {
+          id: 'task-4',
+          projectId: 'proj-2',
+          content: 'Làm việc với Ngân hàng BIDV để phát hành Thư bảo lãnh dự thầu trị giá 250 triệu đồng theo đúng mẫu HSMT',
+          startTime: new Date(nowMs - 8 * 24 * 3600 * 1000).toISOString(),
+          planEndTime: new Date(nowMs - 5 * 24 * 3600 * 1000).toISOString(),
+          isCompleted: true,
+          completedAt: new Date(nowMs - 4 * 24 * 3600 * 1000).toISOString(), // Delayed completion
+          evaluation: 'KhongDat',
+          remarks: 'Ngân hàng yêu cầu bổ sung báo cáo tài chính kiểm toán đột xuất nên bảo lãnh bị muộn 1 ngày so với tiến độ nội bộ. May mắn vẫn kịp đóng thầu chính thức.'
+        },
+        {
+          id: 'task-5',
+          projectId: 'proj-3',
+          content: 'Soạn thảo Hồ sơ năng lực pháp lý, tập hợp bằng cấp nhân sự chủ chốt (chỉ huy trưởng, kỹ sư an toàn) và hợp đồng tương tự',
+          startTime: new Date(nowMs - 1 * 24 * 3600 * 1000).toISOString(),
+          planEndTime: new Date(nowMs + 2 * 24 * 3600 * 1000).toISOString(),
+          isCompleted: false
+        }
+      ];
+    }
+
+    // Main App State
+    let state = {
+      projects: [],
+      tasks: [],
+      currentTab: 'dashboard',
+      searchQuery: '',
+      filterStatus: 'all',
+      filterProjectId: 'all',
+      isEvaluatingTaskId: null,
+      evaluatingSelection: 'Dat'
+    };
+
+    // Initialize State
+    function initApp() {
+      const storedProj = safeStorage.getItem(STORAGE_KEY_PROJECTS);
+      const storedTasks = safeStorage.getItem(STORAGE_KEY_TASKS);
+      
+      if (storedProj && storedTasks) {
+        state.projects = JSON.parse(storedProj);
+        state.tasks = JSON.parse(storedTasks);
+      } else {
+        // First load defaults
+        state.projects = getMockProjects();
+        state.tasks = getMockTasks();
+        saveState();
       }
 
-      // =========================================================
-      // 5. SUB-COMPONENT: TASK EVALUATION MODAL (Complete/KPI Evaluation)
-      // =========================================================
-      function TaskEvaluationModal({ isOpen, taskContent, onClose, onSubmit }) {
-        const [evaluation, setEvaluation] = useState('Dat');
-        const [remarks, setRemarks] = useState('');
-        const [error, setError] = useState('');
+      // Initialize Theme
+      const storedTheme = safeStorage.getItem(STORAGE_KEY_THEME) || 'light';
+      setTheme(storedTheme);
 
-        if (!isOpen) return null;
+      // Event Listeners setup
+      setupEventListeners();
 
-        const handleSave = () => {
-          if (!remarks.trim()) {
-            setError('Vui lòng ghi lại nhận xét, kết quả hoặc bài học kinh nghiệm để lưu lịch sử!');
-            return;
-          }
-          onSubmit(evaluation, remarks.trim());
-          setRemarks('');
-          setEvaluation('Dat');
-          setError('');
-        };
+      // Render App Views
+      renderApp();
 
-        return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
-            <div 
-              id="evaluation-modal-container"
-              className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-150 dark:border-slate-800 overflow-hidden transform transition-all animate-fade-in"
-            >
-              <div className="flex items-center justify-between px-6 py-4 bg-gray-50 dark:bg-slate-950/50 border-b border-gray-100 dark:border-slate-850">
-                <div className="flex items-center gap-2">
-                  <Icon name="Award" className="w-5 h-5 text-indigo-650 dark:text-indigo-400" />
-                  <h3 className="text-lg font-bold text-gray-800 dark:text-white">Đánh Giá Nghiệm Thu KPI</h3>
+      // Start automatic dynamic countdown clock refresh (every 30 seconds)
+      setInterval(() => {
+        if (state.currentTab === 'tasks') {
+          renderTasksList();
+        }
+        checkOverdueAlerts();
+      }, 30000);
+    }
+
+    function saveState() {
+      safeStorage.setItem(STORAGE_KEY_PROJECTS, JSON.stringify(state.projects));
+      safeStorage.setItem(STORAGE_KEY_TASKS, JSON.stringify(state.tasks));
+    }
+
+    function setTheme(theme) {
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.getElementById('theme-sun-icon').classList.remove('hidden');
+        document.getElementById('theme-moon-icon').classList.add('hidden');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.getElementById('theme-sun-icon').classList.add('hidden');
+        document.getElementById('theme-moon-icon').classList.remove('hidden');
+      }
+      safeStorage.setItem(STORAGE_KEY_THEME, theme);
+    }
+
+    // ---------------------------------------------------------
+    // 2. HELPER FUNCTIONS & FORMATTERS
+    // ---------------------------------------------------------
+    function formatDateTimeLocal(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
+    function formatReadableDateTime(isoString) {
+      if (!isoString) return '';
+      const date = new Date(isoString);
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${hours}:${minutes} ngày ${day}/${month}/${year}`;
+    }
+
+    function getRemainingTimeText(planEndTimeStr) {
+      const diff = new Date(planEndTimeStr).getTime() - Date.now();
+      if (diff <= 0) {
+        return { text: 'TRỄ HẸN', isOverdue: true };
+      }
+      const minutesTotal = Math.floor(diff / (60 * 1000));
+      const hoursTotal = Math.floor(diff / (60 * 60 * 1000));
+      const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+
+      if (days > 0) {
+        const remainingHours = hoursTotal % 24;
+        return { text: `Còn ${days} ngày ${remainingHours} giờ`, isOverdue: false };
+      }
+      if (hoursTotal > 0) {
+        const remainingMinutes = minutesTotal % 60;
+        return { text: `Còn ${hoursTotal} giờ ${remainingMinutes} phút`, isOverdue: false };
+      }
+      return { text: `Còn ${minutesTotal > 0 ? minutesTotal : 1} phút`, isOverdue: false };
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `animate-fade-in flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg text-xs font-bold text-white transition-all duration-300 transform translate-y-0 ${
+        type === 'success' ? 'bg-indigo-600' : type === 'error' ? 'bg-rose-600' : 'bg-amber-500'
+      }`;
+      
+      let icon = '';
+      if (type === 'success') {
+        icon = `<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>`;
+      } else {
+        icon = `<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+      }
+
+      toast.innerHTML = `${icon} <span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'scale-95');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // ---------------------------------------------------------
+    // 3. TAB SELECTION & GLOBAL RENDERING
+    // ---------------------------------------------------------
+    function setupEventListeners() {
+      // Tab clicks
+      const tabs = [
+        { id: 'tab-dashboard', view: 'dashboard' },
+        { id: 'tab-tasks', view: 'tasks' },
+        { id: 'tab-projects', view: 'projects' }
+      ];
+
+      tabs.forEach(tab => {
+        document.getElementById(tab.id).addEventListener('click', () => {
+          switchTab(tab.view);
+        });
+      });
+
+      // Theme toggle
+      document.getElementById('theme-toggle-btn').addEventListener('click', () => {
+        const isDark = document.documentElement.classList.contains('dark');
+        setTheme(isDark ? 'light' : 'dark');
+        showToast(`Đã chuyển sang giao diện ${isDark ? 'Sáng' : 'Tối'}!`);
+      });
+
+      // Export CSV
+      document.getElementById('global-export-btn').addEventListener('click', () => {
+        exportTasksToCSV();
+      });
+
+      // Task forms and filters listeners
+      document.getElementById('task-form').addEventListener('submit', handleTaskFormSubmit);
+      document.getElementById('task-form-cancel-btn').addEventListener('click', resetTaskForm);
+      document.getElementById('task-search').addEventListener('input', (e) => {
+        state.searchQuery = e.target.value.trim().toLowerCase();
+        renderTasksList();
+      });
+      document.getElementById('task-filter-project').addEventListener('change', (e) => {
+        state.filterProjectId = e.target.value;
+        renderTasksList();
+      });
+
+      // Project filter buttons
+      document.querySelectorAll('.task-filter-tab').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.task-filter-tab').forEach(b => {
+            b.className = 'task-filter-tab flex-1 md:flex-initial px-3 py-1.5 text-[11px] font-bold rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white cursor-pointer';
+          });
+          e.currentTarget.className = 'task-filter-tab flex-1 md:flex-initial px-3 py-1.5 text-[11px] font-bold rounded-lg text-indigo-600 bg-white dark:bg-slate-900 shadow-xs cursor-pointer';
+          state.filterStatus = e.currentTarget.getAttribute('data-filter');
+          renderTasksList();
+        });
+      });
+
+      // Project form listener
+      document.getElementById('project-form').addEventListener('submit', handleProjectFormSubmit);
+      document.getElementById('project-form-cancel-btn').addEventListener('click', resetProjectForm);
+
+      // Reset System button
+      document.getElementById('reset-system-btn').addEventListener('click', () => {
+        if (confirm('Bạn có chắc chắn muốn đặt lại dữ liệu ban đầu không? Mọi thay đổi hiện tại của bạn sẽ bị mất!')) {
+          localStorage.removeItem(STORAGE_KEY_PROJECTS);
+          localStorage.removeItem(STORAGE_KEY_TASKS);
+          state.projects = getMockProjects();
+          state.tasks = getMockTasks();
+          saveState();
+          renderApp();
+          showToast('Đã đặt lại dữ liệu gốc thành công!');
+        }
+      });
+
+      // Evaluation Modal actions
+      document.getElementById('close-eval-modal-btn').addEventListener('click', closeEvalModal);
+      document.getElementById('close-eval-modal-footer-btn').addEventListener('click', closeEvalModal);
+      document.getElementById('eval-opt-pass').addEventListener('click', () => setEvalSelection('Dat'));
+      document.getElementById('eval-opt-fail').addEventListener('click', () => setEvalSelection('KhongDat'));
+      document.getElementById('save-eval-btn').addEventListener('click', saveEvaluation);
+    }
+
+    function switchTab(tabName) {
+      state.currentTab = tabName;
+      const viewIds = {
+        dashboard: 'view-dashboard',
+        tasks: 'view-tasks',
+        projects: 'view-projects'
+      };
+
+      // Toggle tab button states
+      const tabIds = {
+        dashboard: 'tab-dashboard',
+        tasks: 'tab-tasks',
+        projects: 'tab-projects'
+      };
+
+      Object.keys(viewIds).forEach(key => {
+        const viewEl = document.getElementById(viewIds[key]);
+        const tabEl = document.getElementById(tabIds[key]);
+        
+        if (key === tabName) {
+          viewEl.classList.remove('hidden');
+          tabEl.className = "px-5 py-3.5 text-xs font-bold tracking-wider uppercase border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 transition cursor-pointer flex items-center gap-1.5 shrink-0";
+        } else {
+          viewEl.classList.add('hidden');
+          tabEl.className = "px-5 py-3.5 text-xs font-bold tracking-wider uppercase border-b-2 border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition cursor-pointer flex items-center gap-1.5 shrink-0";
+        }
+      });
+
+      renderApp();
+    }
+
+    function renderApp() {
+      // 1. Core Alerts Check
+      checkOverdueAlerts();
+
+      // 2. Select Box populations
+      populateProjectSelects();
+
+      // 3. Tab Specific Renders
+      if (state.currentTab === 'dashboard') {
+        renderDashboard();
+      } else if (state.currentTab === 'tasks') {
+        renderTasksList();
+      } else if (state.currentTab === 'projects') {
+        renderProjectsList();
+      }
+    }
+
+    function checkOverdueAlerts() {
+      const nowMs = Date.now();
+      const overdueTasks = state.tasks.filter(
+        t => !t.isCompleted && new Date(t.planEndTime).getTime() < nowMs
+      );
+
+      const banner = document.getElementById('alert-banner-container');
+      if (overdueTasks.length > 0) {
+        banner.classList.remove('hidden');
+        document.getElementById('alert-banner-title').innerText = `CẢNH BÁO TIẾN ĐỘ: Đang có ${overdueTasks.length} công việc trễ hạn nội bộ!`;
+        document.getElementById('alert-banner-desc').innerText = `Các gói thầu yêu cầu hành động khẩn cấp để không ảnh hưởng đến hạn đóng thầu chính thức.`;
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    function populateProjectSelects() {
+      // Task Form Project Dropdown
+      const formSel = document.getElementById('task-form-project-id');
+      const filterSel = document.getElementById('task-filter-project');
+
+      const currentFormVal = formSel.value;
+      const currentFilterVal = filterSel.value;
+
+      let optionsHTML = '<option value="">-- Chọn gói thầu --</option>';
+      let filterHTML = '<option value="all">Tất cả gói thầu</option>';
+
+      state.projects.forEach(p => {
+        optionsHTML += `<option value="${p.id}">${p.name}</option>`;
+        filterHTML += `<option value="${p.id}">${p.name}</option>`;
+      });
+
+      formSel.innerHTML = optionsHTML;
+      filterSel.innerHTML = filterHTML;
+
+      formSel.value = currentFormVal;
+      filterSel.value = currentFilterVal;
+    }
+
+    // ---------------------------------------------------------
+    // 4. RENDERING VIEWS: DASHBOARD (Analytic Charts & Stats)
+    // ---------------------------------------------------------
+    function renderDashboard() {
+      const nowMs = Date.now();
+
+      // Standard stats counters
+      const totalProjects = state.projects.length;
+      const totalTasks = state.tasks.length;
+      const completedTasks = state.tasks.filter(t => t.isCompleted);
+      const completedTasksCount = completedTasks.length;
+      const overdueTasksCount = state.tasks.filter(
+        t => !t.isCompleted && new Date(t.planEndTime).getTime() < nowMs
+      ).length;
+
+      document.getElementById('stat-total-projects').innerText = totalProjects;
+      document.getElementById('stat-total-tasks').innerText = totalTasks;
+      document.getElementById('stat-completed-tasks').innerText = completedTasksCount;
+      document.getElementById('stat-overdue-tasks').innerText = overdueTasksCount;
+
+      // Animate card highlight if any overdue task exists
+      const overdueCard = document.getElementById('stat-overdue-tasks').parentElement.parentElement;
+      if (overdueTasksCount > 0) {
+        overdueCard.classList.add('border-rose-300', 'bg-rose-50/50', 'dark:bg-rose-950/20');
+        document.getElementById('stat-overdue-tasks').classList.add('text-rose-600', 'animate-pulse');
+      } else {
+        overdueCard.classList.remove('border-rose-300', 'bg-rose-50/50', 'dark:bg-rose-950/20');
+        document.getElementById('stat-overdue-tasks').classList.remove('text-rose-600', 'animate-pulse');
+      }
+
+      // Calculate KPI on time percentage
+      const completedOnTime = completedTasks.filter(t => {
+        return new Date(t.completedAt).getTime() <= new Date(t.planEndTime).getTime();
+      }).length;
+
+      const kpiPercentage = completedTasksCount > 0 ? Math.round((completedOnTime / completedTasksCount) * 100) : 0;
+      
+      document.getElementById('kpi-percentage-text').innerText = `${kpiPercentage}%`;
+      document.getElementById('kpi-count-on-time').innerText = `${completedOnTime} việc`;
+      document.getElementById('kpi-count-total-completed').innerText = `${completedTasksCount} việc`;
+
+      // Update circular SVG bar
+      // 251.2 is the circumference for a circle of radius 40
+      const strokeOffset = 251.2 - (251.2 * kpiPercentage) / 100;
+      document.getElementById('kpi-radial-circle').style.strokeDashoffset = strokeOffset;
+
+      // Render Projects Bars
+      renderProjectKPIBars();
+
+      // Render Lessons Learned log
+      renderLessonsLearned();
+    }
+
+    function renderProjectKPIBars() {
+      const container = document.getElementById('project-kpi-bars-container');
+      if (state.projects.length === 0) {
+        container.innerHTML = `<p class="text-xs text-gray-400 italic text-center py-6">Chưa có gói thầu nào được tạo.</p>`;
+        return;
+      }
+
+      let html = '';
+      state.projects.forEach(proj => {
+        const projTasks = state.tasks.filter(t => t.projectId === proj.id);
+        const total = projTasks.length;
+        const completed = projTasks.filter(t => t.isCompleted).length;
+        const overdue = projTasks.filter(t => !t.isCompleted && new Date(t.planEndTime).getTime() < Date.now()).length;
+
+        const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        // KPI evaluation stats (How many audited completed are passed)
+        const passedTasks = projTasks.filter(t => t.isCompleted && t.evaluation === 'Dat').length;
+        const passRate = completed > 0 ? Math.round((passedTasks / completed) * 100) : 0;
+
+        html += `
+          <div class="space-y-1.5 p-3 rounded-xl border border-gray-50 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+            <div class="flex items-start justify-between gap-4">
+              <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 line-clamp-1" title="${proj.name}">${proj.name}</span>
+              <span class="text-[10px] font-bold font-mono px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-md shrink-0">
+                ${completed}/${total} VIỆC
+              </span>
+            </div>
+
+            <!-- Double Progress Indicators -->
+            <div class="grid grid-cols-2 gap-4 pt-1">
+              <div>
+                <div class="flex justify-between text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase">
+                  <span>Tiến độ thực hiện</span>
+                  <span>${progressPercent}%</span>
                 </div>
-                <button
-                  type="button"
-                  id="close-modal-btn"
-                  onClick={onClose}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition duration-150"
-                >
-                  <Icon name="X" className="w-5 h-5" />
-                </button>
+                <div class="w-full bg-slate-100 dark:bg-slate-850 h-2 rounded-full overflow-hidden mt-1">
+                  <div class="bg-indigo-600 dark:bg-indigo-400 h-full rounded-full transition-all" style="width: ${progressPercent}%"></div>
+                </div>
               </div>
 
-              <div className="p-6 space-y-4">
-                <div>
-                  <span className="text-[11px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider block mb-1.5">
-                    Nội dung công việc hoàn thành:
-                  </span>
-                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-350 bg-indigo-50/50 dark:bg-indigo-950/20 p-3.5 rounded-xl border border-indigo-100/50 dark:border-indigo-950/30 italic">
-                    "{taskContent}"
-                  </p>
+              <div>
+                <div class="flex justify-between text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase">
+                  <span>Tỷ lệ ĐẠT KPI nghiệm thu</span>
+                  <span>${passRate}%</span>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2">
-                    Nghiệm thu chất lượng <span className="text-red-500">*</span>
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      id="eval-btn-dat"
-                      onClick={() => setEvaluation('Dat')}
-                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-xs font-bold transition duration-150 ${
-                        evaluation === 'Dat'
-                          ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-400 ring-4 ring-emerald-500/10'
-                          : 'border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-900'
-                      }`}
-                    >
-                      <Icon name="CheckCircle2" className={`w-5 h-5 ${evaluation === 'Dat' ? 'text-emerald-600' : 'text-gray-450'}`} />
-                      <span>ĐẠT YÊU CẦU</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      id="eval-btn-khongdat"
-                      onClick={() => setEvaluation('KhongDat')}
-                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-xs font-bold transition duration-150 ${
-                        evaluation === 'KhongDat'
-                          ? 'border-rose-500 bg-rose-50 dark:bg-rose-950/30 text-rose-800 dark:text-rose-400 ring-4 ring-rose-500/10'
-                          : 'border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-900'
-                      }`}
-                    >
-                      <Icon name="AlertTriangle" className={`w-5 h-5 ${evaluation === 'KhongDat' ? 'text-rose-600' : 'text-gray-450'}`} />
-                      <span>CHƯA ĐẠT</span>
-                    </button>
-                  </div>
+                <div class="w-full bg-slate-100 dark:bg-slate-850 h-2 rounded-full overflow-hidden mt-1">
+                  <div class="bg-emerald-500 h-full rounded-full transition-all" style="width: ${passRate}%"></div>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2">
-                    Nhận xét / Bài học rút ra & Giải pháp <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    id="evaluation-remarks-input"
-                    rows={4}
-                    placeholder={
-                      evaluation === 'Dat'
-                        ? 'Ghi chú kinh nghiệm hoàn thành tốt (ví dụ: làm trước tiến độ, phối hợp tốt, phương án tối ưu...)'
-                        : 'Lý do chưa đạt yêu cầu và phương án khắc phục chi tiết để sửa lỗi nhanh nhất...'
-                    }
-                    className="w-full rounded-xl border border-gray-200 dark:border-slate-800 px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-950 text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    value={remarks}
-                    onChange={(e) => {
-                      setRemarks(e.target.value);
-                      if (e.target.value.trim()) setError('');
-                    }}
-                  />
-                </div>
-
-                {error && (
-                  <p className="text-xs text-rose-600 dark:text-rose-450 bg-rose-50 dark:bg-rose-950/20 px-3.5 py-2.5 rounded-xl border border-rose-100 dark:border-rose-950/30 flex items-center gap-1.5 font-medium">
-                    <Icon name="AlertTriangle" className="w-4 h-4 shrink-0" />
-                    <span>{error}</span>
-                  </p>
-                )}
-              </div>
-
-              <div className="flex justify-end gap-2 px-6 py-4 bg-gray-50 dark:bg-slate-950/50 border-t border-gray-100 dark:border-slate-850">
-                <button
-                  type="button"
-                  id="cancel-modal-btn"
-                  onClick={onClose}
-                  className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-slate-350 bg-white dark:bg-slate-950 hover:bg-gray-100 dark:hover:bg-slate-800 border border-gray-200 dark:border-slate-850 rounded-xl transition duration-150 cursor-pointer"
-                >
-                  Đóng
-                </button>
-                <button
-                  type="button"
-                  id="save-evaluation-btn"
-                  onClick={handleSave}
-                  className={`px-5 py-2 text-xs font-bold text-white rounded-xl transition duration-150 flex items-center gap-1.5 shadow-md hover:shadow-lg cursor-pointer ${
-                    evaluation === 'Dat' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'
-                  }`}
-                >
-                  <Icon name="Check" className="w-4 h-4" />
-                  <span>Xác Nhận Nghiệm Thu</span>
-                </button>
               </div>
             </div>
+
+            ${overdue > 0 ? `
+              <div class="flex items-center gap-1 text-[10px] text-rose-500 font-bold pt-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
+                <span>Cảnh báo: Có ${overdue} việc đang trễ hẹn hoàn thành!</span>
+              </div>
+            ` : ''}
           </div>
-        );
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function renderLessonsLearned() {
+      const container = document.getElementById('lessons-learned-container');
+      const auditedTasks = state.tasks.filter(t => t.isCompleted && t.remarks);
+
+      if (auditedTasks.length === 0) {
+        container.innerHTML = `<p class="text-xs text-gray-400 italic text-center py-6">Chưa có bài học kinh nghiệm được lưu trữ từ các lần nghiệm thu.</p>`;
+        return;
       }
 
-      // =========================================================
-      // 6. MAIN COMPONENT: DASHBOARD OVERVIEW & ANALYTICS
-      // =========================================================
-      function Dashboard({ projects, tasks, onResetData }) {
-        const nowMs = Date.now();
+      let html = '';
+      auditedTasks.forEach(task => {
+        const proj = state.projects.find(p => p.id === task.projectId);
+        const projName = proj ? proj.name : 'Gói thầu không xác định';
+        const isPass = task.evaluation === 'Dat';
 
-        const totalProjects = projects.length;
-        
-        const activeProjectsCount = projects.filter(p => {
-          const projTasks = tasks.filter(t => t.projectId === p.id);
-          return projTasks.some(t => !t.isCompleted);
-        }).length;
+        html += `
+          <div class="border-l-4 p-3 bg-slate-50/70 dark:bg-slate-950/40 rounded-r-xl border-gray-150 dark:border-slate-800 ${
+            isPass ? 'border-l-emerald-500' : 'border-l-rose-500'
+          } space-y-1 text-xs">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[9.5px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate max-w-[280px]" title="${projName}">${projName}</span>
+              <span class="font-bold text-[10px] ${isPass ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} uppercase">
+                ${isPass ? 'ĐẠT' : 'CHƯA ĐẠT'}
+              </span>
+            </div>
+            <p class="font-medium text-slate-700 dark:text-slate-300 font-sans italic">"${task.content}"</p>
+            <div class="text-[11px] text-slate-600 dark:text-slate-400 pt-1 border-t border-dashed border-gray-200 dark:border-slate-850">
+              <span class="font-bold">Kinh nghiệm rút ra:</span> ${task.remarks}
+            </div>
+            <div class="text-[10px] text-gray-400 dark:text-slate-500 text-right pt-0.5 font-mono">
+              Nghiệm thu lúc ${formatReadableDateTime(task.completedAt)}
+            </div>
+          </div>
+        `;
+      });
 
-        const totalTasksCreated = tasks.length;
-        const completedTasks = tasks.filter(t => t.isCompleted);
-        const completedTasksCount = completedTasks.length;
+      container.innerHTML = html;
+    }
 
-        const overdueTasksCount = tasks.filter(
-          t => !t.isCompleted && new Date(t.planEndTime).getTime() < nowMs
-        ).length;
+    // ---------------------------------------------------------
+    // 5. RENDERING VIEWS: TASKS LOG (Add, Edit, Filter, List)
+    // ---------------------------------------------------------
+    function renderTasksList() {
+      const container = document.getElementById('tasks-log-list');
+      const nowMs = Date.now();
 
-        const completedOnTime = completedTasks.filter(t => {
-          const completedTime = new Date(t.completedAt).getTime();
-          const planEndTime = new Date(t.planEndTime).getTime();
-          return completedTime <= planEndTime;
-        });
-        const completedOnTimeCount = completedOnTime.length;
+      // Set Date Input values default if blank
+      if (!document.getElementById('task-form-start-time').value) {
+        document.getElementById('task-form-start-time').value = formatDateTimeLocal(new Date());
+      }
+      if (!document.getElementById('task-form-plan-end').value) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('task-form-plan-end').value = formatDateTimeLocal(tomorrow);
+      }
 
-        const kpiRate = completedTasksCount > 0 
-          ? Math.round((completedOnTimeCount / completedTasksCount) * 100) 
-          : 0;
+      // Filter tasks
+      let filtered = [...state.tasks];
 
-        const projectStats = projects.map(proj => {
-          const projTasks = tasks.filter(t => t.projectId === proj.id);
-          const activeCount = projTasks.filter(t => !t.isCompleted).length;
-          const completedCount = projTasks.filter(t => t.isCompleted).length;
+      // Search Query filter
+      if (state.searchQuery) {
+        filtered = filtered.filter(t => t.content.toLowerCase().includes(state.searchQuery));
+      }
+
+      // Project filter
+      if (state.filterProjectId !== 'all') {
+        filtered = filtered.filter(t => t.projectId === state.filterProjectId);
+      }
+
+      // Status tab filter
+      if (state.filterStatus === 'pending') {
+        filtered = filtered.filter(t => !t.isCompleted);
+      } else if (state.filterStatus === 'completed') {
+        filtered = filtered.filter(t => t.isCompleted);
+      } else if (state.filterStatus === 'overdue') {
+        filtered = filtered.filter(t => !t.isCompleted && new Date(t.planEndTime).getTime() < nowMs);
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 p-12 text-center rounded-2xl shadow-xs">
+            <svg class="w-12 h-12 text-gray-300 dark:text-slate-700 mx-auto mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            <p class="text-xs text-gray-500 dark:text-slate-400 font-bold">Không tìm thấy công việc tương ứng!</p>
+            <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-1">Vui lòng thay đổi từ khóa, bộ lọc hoặc tạo một nhiệm vụ mới để quản lý.</p>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      filtered.forEach(task => {
+        const proj = state.projects.find(p => p.id === task.projectId);
+        const projName = proj ? proj.name : 'Gói thầu không xác định';
+        const isOverdue = !task.isCompleted && new Date(task.planEndTime).getTime() < nowMs;
+
+        // Dynamic status element setup
+        let statusBadge = '';
+        let timerElement = '';
+
+        if (task.isCompleted) {
+          const finishedOnTime = new Date(task.completedAt).getTime() <= new Date(task.planEndTime).getTime();
+          statusBadge = `
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-400">
+              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+              ĐÃ NGHIỆM THU
+            </span>
+          `;
           
-          const passedTasks = projTasks.filter(t => t.isCompleted && t.evaluation === 'Dat');
-          const passRate = completedCount > 0 
-            ? Math.round((passedTasks.length / completedCount) * 100) 
-            : 0;
+          timerElement = `
+            <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5 flex-wrap">
+              <span class="font-bold">Đánh giá:</span>
+              <span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold ${
+                task.evaluation === 'Dat' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400' : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400'
+              }">${task.evaluation === 'Dat' ? 'ĐẠT YÊU CẦU' : 'CHƯA ĐẠT'}</span>
+              <span>• Hoàn thành lúc: ${formatReadableDateTime(task.completedAt)}</span>
+              ${finishedOnTime 
+                ? '<span class="text-indigo-600 dark:text-indigo-400 font-bold text-[10px]">(Đúng tiến độ)</span>' 
+                : '<span class="text-rose-500 font-bold text-[10px]">(Bị trễ hạn)</span>'
+              }
+            </div>
+            ${task.remarks ? `
+              <div class="text-[11px] text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-lg border border-gray-150/50 dark:border-slate-800/60 mt-1.5 italic">
+                <span class="font-bold text-[10px] text-indigo-500 dark:text-indigo-400 uppercase tracking-wider not-italic block mb-0.5">Nhận xét & Kinh nghiệm:</span>
+                "${task.remarks}"
+              </div>
+            ` : ''}
+          `;
+        } else {
+          const timing = getRemainingTimeText(task.planEndTime);
+          if (timing.isOverdue) {
+            statusBadge = `
+              <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-400 animate-pulse border border-rose-300 dark:border-rose-900/30">
+                TRỄ HẠN NỘI BỘ
+              </span>
+            `;
+            timerElement = `
+              <div class="text-[11px] font-bold text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping mr-1"></span>
+                <span>Hồ sơ đã trễ hạn! Vui lòng lập tức nghiệm thu hoặc dời tiến độ.</span>
+              </div>
+            `;
+          } else {
+            statusBadge = `
+              <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 dark:bg-sky-950/50 text-sky-800 dark:text-sky-400">
+                ĐANG THỰC HIỆN
+              </span>
+            `;
+            timerElement = `
+              <div class="text-[11px] font-semibold text-slate-600 dark:text-slate-400 mt-1 font-mono">
+                ${timing.text}
+              </div>
+            `;
+          }
+        }
 
-          const remarksList = projTasks
-            .filter(t => t.isCompleted && t.remarks && t.remarks.trim() !== '')
-            .map(t => ({
-              taskId: t.id,
-              content: t.content,
-              evaluation: t.evaluation,
-              remarks: t.remarks || '',
-              completedAt: t.completedAt || '',
-            }));
+        html += `
+          <div class="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-xs hover:shadow-sm hover:border-gray-200 dark:hover:border-slate-750 transition-all duration-200">
+            <!-- Header of Card -->
+            <div class="flex items-start justify-between gap-3 flex-wrap sm:flex-nowrap">
+              <div class="space-y-1">
+                <span class="text-[9.5px] font-bold text-indigo-600 dark:text-indigo-400 tracking-wider uppercase bg-indigo-50 dark:bg-indigo-950/50 px-2 py-0.5 rounded-md inline-block max-w-[280px] sm:max-w-md truncate" title="${projName}">
+                  ${projName}
+                </span>
+                <p class="text-xs sm:text-sm font-bold text-slate-850 dark:text-slate-100 mt-1">${task.content}</p>
+              </div>
+              <div class="shrink-0 flex items-center gap-2">
+                ${statusBadge}
+              </div>
+            </div>
 
-          return {
-            ...proj,
-            activeCount,
-            completedCount,
-            passRate,
-            remarksList,
-            allTasks: projTasks,
-          };
-        });
+            <!-- Content Timing details -->
+            <div class="mt-3 pt-3 border-t border-gray-100 dark:border-slate-850">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-gray-500 dark:text-slate-400">
+                <div class="flex items-center gap-1">
+                  <span class="font-semibold text-gray-400">Bắt đầu:</span>
+                  <span class="font-mono">${formatReadableDateTime(task.startTime)}</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <span class="font-semibold text-gray-400">Hạn chót:</span>
+                  <span class="font-mono">${formatReadableDateTime(task.planEndTime)}</span>
+                </div>
+              </div>
 
-        return (
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 p-5 rounded-2xl shadow-sm transition-all duration-200">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Icon name="TrendingUp" className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                  Đo Lường Hiệu Suất KPI & Đấu Thầu
-                </h2>
-                <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
-                  Đánh giá tỷ lệ hoàn thành đúng tiến độ nội bộ, thống kê tỷ lệ đạt kiểm tra của các phòng ban.
-                </p>
+              ${timerElement}
+            </div>
+
+            <!-- Action buttons inside task -->
+            <div class="flex justify-end items-center gap-2 mt-4 pt-3 border-t border-dashed border-gray-100 dark:border-slate-850">
+              <button onclick="handleDeleteTask('${task.id}')" class="p-2 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer" title="Xóa nhiệm vụ này">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              </button>
+              <button onclick="handleEditTask('${task.id}')" class="p-2 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition cursor-pointer" title="Chỉnh sửa chi tiết">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+              </button>
+              
+              ${!task.isCompleted ? `
+                <button onclick="openEvaluationModal('${task.id}')" class="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs transition cursor-pointer">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  <span>Nghiệm Thu KPI</span>
+                </button>
+              ` : `
+                <button onclick="reopenTask('${task.id}')" class="flex items-center gap-1 px-3 py-1.5 border border-gray-200 dark:border-slate-800 text-slate-500 hover:text-indigo-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition cursor-pointer">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121 12h-4.5" /></svg>
+                  <span>Mở lại</span>
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    // ---------------------------------------------------------
+    // 6. DETAILED PROJECTS LOG (Add, Edit, Progress Tracker)
+    // ---------------------------------------------------------
+    function renderProjectsList() {
+      const container = document.getElementById('projects-grid-container');
+      if (state.projects.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 p-12 text-center rounded-2xl shadow-xs">
+            <p class="text-xs text-gray-500 dark:text-slate-400 font-bold">Chưa có gói thầu nào được tạo!</p>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      state.projects.forEach(proj => {
+        const projTasks = state.tasks.filter(t => t.projectId === proj.id);
+        const total = projTasks.length;
+        const completed = projTasks.filter(t => t.isCompleted).length;
+        const overdue = projTasks.filter(t => !t.isCompleted && new Date(t.planEndTime).getTime() < Date.now()).length;
+
+        const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        html += `
+          <div class="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between hover:border-gray-200 dark:hover:border-slate-750 transition duration-200">
+            <div>
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex items-center gap-2">
+                  <div class="p-1.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+                  </div>
+                  <h4 class="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Thông tin gói thầu</h4>
+                </div>
+                
+                <div class="flex items-center gap-1.5">
+                  <button onclick="handleEditProject('${proj.id}')" class="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition cursor-pointer" title="Sửa tên gói thầu">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                  </button>
+                  <button onclick="handleDeleteProject('${proj.id}')" class="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer" title="Xóa toàn bộ gói thầu">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  </button>
+                </div>
+              </div>
+
+              <h3 class="text-xs sm:text-sm font-bold text-slate-850 dark:text-slate-100 mt-2.5 line-clamp-2" title="${proj.name}">${proj.name}</h3>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-gray-100 dark:border-slate-850">
+              <div class="flex justify-between text-[11px] font-bold text-gray-500 dark:text-slate-400 mb-1">
+                <span>Tiến độ gói thầu</span>
+                <span>${completed}/${total} việc (${progressPercent}%)</span>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-850 h-2.5 rounded-full overflow-hidden">
+                <div class="bg-indigo-600 h-full rounded-full transition-all" style="width: ${progressPercent}%"></div>
               </div>
               
-              <div className="flex items-center gap-2.5 shrink-0">
-                <button
-                  type="button"
-                  id="dashboard-export-excel-btn"
-                  onClick={() => exportTasksToCSV(projects, tasks)}
-                  className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm hover:shadow-md transition-all duration-150 cursor-pointer active:translate-y-0.5"
-                  title="Xuất bảng dữ liệu ra file Excel (.csv)"
-                >
-                  <Icon name="FileDown" className="w-4 h-4" />
-                  <span>Xuất Báo Cáo Excel</span>
-                </button>
-                <button
-                  type="button"
-                  id="dashboard-reset-btn"
-                  onClick={onResetData}
-                  className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300 text-xs font-bold rounded-xl shadow-sm transition-all duration-150 cursor-pointer"
-                  title="Khôi phục lại dữ liệu mẫu"
-                >
-                  <Icon name="RefreshCw" className="w-4 h-4" />
-                  <span className="hidden sm:inline">Khôi phục gốc</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 shadow-xs flex items-center gap-4 transition-all duration-200">
-                <div className="p-3.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl">
-                  <Icon name="Folder" className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Tổng Dự Án</p>
-                  <h4 className="text-2xl font-bold text-gray-800 dark:text-white mt-0.5">{totalProjects}</h4>
-                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
-                    <span className="font-semibold text-indigo-600 dark:text-indigo-400">{activeProjectsCount}</span> dự án đang chạy
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 shadow-xs flex items-center gap-4 transition-all duration-200">
-                <div className="p-3.5 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 rounded-xl">
-                  <Icon name="Briefcase" className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Đã Giao Thầu</p>
-                  <h4 className="text-2xl font-bold text-gray-800 dark:text-white mt-0.5">{totalTasksCreated}</h4>
-                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
-                    Đang làm: <span className="font-semibold text-sky-600 dark:text-sky-400">{totalTasksCreated - completedTasksCount}</span> việc
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 shadow-xs flex items-center gap-4 transition-all duration-200">
-                <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
-                  <Icon name="CheckCircle2" className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Nghiệm Thu Xong</p>
-                  <h4 className="text-2xl font-bold text-gray-800 dark:text-white mt-0.5">{completedTasksCount}</h4>
-                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
-                    Đúng hạn: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{completedOnTimeCount}</span> / {completedTasksCount}
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 shadow-xs flex items-center gap-4 transition-all duration-200">
-                <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl">
-                  <Icon name="AlertTriangle" className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Đang Trễ Hạn</p>
-                  <h4 className={`text-2xl font-extrabold mt-0.5 ${overdueTasksCount > 0 ? 'text-rose-600 animate-pulse' : 'text-gray-800 dark:text-white'}`}>
-                    {overdueTasksCount}
-                  </h4>
-                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
-                    Cần giải quyết gấp!
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-gradient-to-br from-indigo-950 to-slate-900 rounded-3xl p-6 text-white shadow-lg md:col-span-1 flex flex-col justify-between relative overflow-hidden">
-                <div className="absolute right-0 bottom-0 opacity-5 pointer-events-none">
-                  <Icon name="TrendingUp" className="w-48 h-48" />
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider bg-indigo-900/50 px-2.5 py-1 rounded-md">
-                      Chỉ số tiến độ
-                    </span>
-                    <Icon name="CalendarCheck2" className="w-5 h-5 text-indigo-400" />
-                  </div>
-                  <h3 className="text-lg font-bold text-white leading-tight">KPI Hoàn Thành Đúng Hạn</h3>
-                  <p className="text-xs text-indigo-300 mt-1">Đo lường tính kỷ luật tiến độ nội bộ</p>
-                </div>
-
-                <div className="my-6 flex items-center justify-center">
-                  <div className="relative w-32 h-32">
-                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="16" fill="none" stroke="#1e293b" strokeWidth="3" />
-                      <circle 
-                        cx="18" 
-                        cy="18" 
-                        r="16" 
-                        fill="none" 
-                        stroke="#6366f1" 
-                        strokeWidth="3.2" 
-                        strokeDasharray={`${kpiRate}, 100`}
-                        strokeLinecap="round"
-                        className="transition-all duration-1000 ease-out"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-2xl font-black text-white">{kpiRate}%</span>
-                      <span className="text-[9px] font-bold text-indigo-200 mt-0.5 tracking-wider uppercase">ĐÚNG HẠN</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2 text-xs border-t border-slate-800 pt-4">
-                  <div className="flex items-center justify-between text-slate-300">
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 bg-indigo-500 rounded-full"></span>
-                      Xong đúng hạn:
-                    </span>
-                    <strong className="text-white">{completedOnTimeCount} việc</strong>
-                  </div>
-                  <div className="flex items-center justify-between text-slate-300">
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 bg-slate-700 rounded-full"></span>
-                      Tổng số hoàn thành:
-                    </span>
-                    <strong className="text-white">{completedTasksCount} việc</strong>
-                  </div>
-                </div>
-
-                <div className="mt-4 text-xs text-indigo-300 bg-indigo-900/20 p-3 rounded-xl border border-indigo-900/30">
-                  {kpiRate >= 80 
-                    ? 'Xuất sắc! Đội ngũ đang phối hợp triển khai vô cùng chuyên nghiệp.' 
-                    : kpiRate >= 50 
-                    ? 'Khá tốt! Hãy chú ý kiểm tra sát sao hơn các hạng mục chuẩn bị trễ hạn.' 
-                    : completedTasksCount === 0 
-                    ? 'Chưa có dữ liệu hoàn thành nào để xếp hạng chỉ số KPI.' 
-                    : 'Cảnh báo! Chỉ số đúng hạn ở mức thấp, cần rà soát lại nhân lực & quy trình thầu.'}
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-slate-800 p-6 shadow-sm md:col-span-2 transition-all duration-200">
-                <div className="flex items-center justify-between mb-4 border-b border-gray-100 dark:border-slate-850 pb-3">
-                  <div className="flex items-center gap-2">
-                    <Icon name="FileCheck2" className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                    <h3 className="font-bold text-gray-800 dark:text-white">Chi Tiết Hiệu Suất KPI Theo Dự Án</h3>
-                  </div>
-                  <span className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Tỷ lệ đạt chuẩn</span>
-                </div>
-
-                <div className="space-y-4 max-h-[460px] overflow-y-auto pr-1">
-                  {projectStats.map(p => {
-                    const totalProjTasks = p.activeCount + p.completedCount;
-                    return (
-                      <div key={p.id} className="bg-slate-50/50 dark:bg-slate-950/40 rounded-2xl p-4 border border-gray-100 dark:border-slate-800/80 space-y-3">
-                        <div className="flex items-start justify-between gap-4">
-                          <span className="font-bold text-sm text-gray-800 dark:text-slate-200 leading-tight">
-                            {p.name}
-                          </span>
-                          <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-1 rounded-lg shrink-0 border border-indigo-100/40 dark:border-indigo-900/20">
-                            Chất lượng Đạt: {p.passRate}%
-                          </span>
-                        </div>
-                        
-                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full rounded-full transition-all duration-500 ${
-                              p.passRate >= 80 
-                                ? 'bg-emerald-500' 
-                                : p.passRate >= 50 
-                                ? 'bg-indigo-500' 
-                                : 'bg-rose-500'
-                            }`}
-                            style={{ width: `${p.passRate}%` }}
-                          ></div>
-                        </div>
-
-                        <div className="flex justify-between items-center text-[11px] text-gray-400 dark:text-slate-500">
-                          <span>
-                            Trạng thái: <strong className="text-sky-600 dark:text-sky-400">{p.activeCount} việc đang chạy</strong> / <strong className="text-emerald-600 dark:text-emerald-400">{p.completedCount} đã xong</strong>
-                          </span>
-                          <span>Tổng: {totalProjTasks} hạng mục</span>
-                        </div>
-
-                        {p.remarksList.length > 0 && (
-                          <div className="mt-3 bg-white dark:bg-slate-900 p-3 rounded-xl border border-gray-100 dark:border-slate-850 space-y-1.5">
-                            <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider block">Bài học kinh nghiệm / Nhật ký khắc phục:</span>
-                            <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
-                              {p.remarksList.map((item, idx) => (
-                                <div key={idx} className="text-xs border-l-2 border-indigo-500 dark:border-indigo-400 pl-2 py-0.5 space-y-0.5">
-                                  <div className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-slate-500 font-medium">
-                                    <span>Giao thầu: "{item.content.substring(0, 50)}..."</span>
-                                    <span>•</span>
-                                    <span className={item.evaluation === 'Dat' ? 'text-emerald-600 font-bold' : 'text-rose-600 font-bold'}>
-                                      {item.evaluation === 'Dat' ? 'Đạt' : 'Chưa đạt'}
-                                    </span>
-                                  </div>
-                                  <p className="text-gray-600 dark:text-slate-300 italic font-medium">
-                                    "{item.remarks}"
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+              <div class="grid grid-cols-2 gap-2 text-[10px] text-slate-500 dark:text-slate-400 mt-3 pt-2.5 border-t border-dashed border-gray-100 dark:border-slate-850">
+                <div>Tổng công việc: <span class="font-bold text-slate-800 dark:text-slate-200">${total}</span></div>
+                <div>Đang trễ: <span class="font-bold ${overdue > 0 ? 'text-rose-600' : 'text-slate-800 dark:text-slate-200'}">${overdue}</span></div>
               </div>
             </div>
           </div>
-        );
+        `;
+      });
+
+      container.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">${html}</div>`;
+    }
+
+    // ---------------------------------------------------------
+    // 7. EVENT HANDLERS & OPERATIONS (CRUD Tasks & Projects)
+    // ---------------------------------------------------------
+    function handleTaskFormSubmit(e) {
+      e.preventDefault();
+      const errEl = document.getElementById('task-form-error');
+      errEl.classList.add('hidden');
+
+      const taskId = document.getElementById('edit-task-id').value;
+      const projectId = document.getElementById('task-form-project-id').value;
+      const content = document.getElementById('task-form-content').value.trim();
+      const startTime = document.getElementById('task-form-start-time').value;
+      const planEndTime = document.getElementById('task-form-plan-end').value;
+
+      if (!projectId) {
+        showFormError('task-form-error', 'Vui lòng lựa chọn dự án / gói thầu!');
+        return;
+      }
+      if (!content) {
+        showFormError('task-form-error', 'Vui lòng ghi nội dung công việc cụ thể!');
+        return;
       }
 
-      // =========================================================
-      // 7. MAIN APP WRAPPER (State management & Views router)
-      // =========================================================
-      function App() {
-        const [projects, setProjects] = useState([]);
-        const [tasks, setTasks] = useState([]);
-        
-        const [isDarkMode, setIsDarkMode] = useState(() => {
-          const stored = safeStorage.getItem('pms_dark_mode');
-          return stored === 'true';
-        });
-
-        useEffect(() => {
-          if (isDarkMode) {
-            document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.classList.remove('dark');
-          }
-          safeStorage.setItem('pms_dark_mode', String(isDarkMode));
-        }, [isDarkMode]);
-        
-        const [currentTab, setCurrentTab] = useState('dashboard');
-        
-        // Task Filtering/Search States
-        const [selectedFilterProjectId, setSelectedFilterProjectId] = useState('all');
-        const [statusFilter, setStatusFilter] = useState('all');
-        const [searchQuery, setSearchQuery] = useState('');
-
-        // Loading and Initialization
-        useEffect(() => {
-          const storedProjects = safeStorage.getItem('pms_projects');
-          const storedTasks = safeStorage.getItem('pms_tasks');
-
-          if (storedProjects && storedTasks) {
-            try {
-              setProjects(JSON.parse(storedProjects));
-              setTasks(JSON.parse(storedTasks));
-            } catch (e) {
-              console.error("Error parsing stored data", e);
-              loadDefaultMockData();
-            }
-          } else {
-            loadDefaultMockData();
-          }
-        }, []);
-
-        const loadDefaultMockData = () => {
-          const mockProj = getMockProjects();
-          const mockTasks = getMockTasks();
-          setProjects(mockProj);
-          setTasks(mockTasks);
-          safeStorage.setItem('pms_projects', JSON.stringify(mockProj));
-          safeStorage.setItem('pms_tasks', JSON.stringify(mockTasks));
-        };
-
-        const saveProjects = (updatedProjects) => {
-          setProjects(updatedProjects);
-          safeStorage.setItem('pms_projects', JSON.stringify(updatedProjects));
-        };
-
-        const saveTasks = (updatedTasks) => {
-          setTasks(updatedTasks);
-          safeStorage.setItem('pms_tasks', JSON.stringify(updatedTasks));
-        };
-
-        const handleAddProject = (projectName) => {
-          const newProject = {
-            id: `proj-${Date.now()}`,
-            name: projectName,
-            createdAt: new Date().toISOString(),
-          };
-          const updated = [newProject, ...projects];
-          saveProjects(updated);
-          return newProject.id;
-        };
-
-        const handleAddTask = (taskData) => {
-          const newTask = {
-            id: `task-${Date.now()}`,
-            projectId: taskData.projectId,
-            content: taskData.content,
-            startTime: new Date(taskData.startTime).toISOString(),
-            planEndTime: new Date(taskData.planEndTime).toISOString(),
-            isCompleted: false,
-          };
-          const updated = [newTask, ...tasks];
-          saveTasks(updated);
-        };
-
-        // Complete & Evaluation Modal triggers
-        const [evaluatingTask, setEvaluatingTask] = useState(null);
-
-        const handleCompleteClick = (task) => {
-          setEvaluatingTask(task);
-        };
-
-        const handleEvaluationSubmit = (evaluation, remarks) => {
-          if (!evaluatingTask) return;
-
-          const updatedTasks = tasks.map((t) => {
-            if (t.id === evaluatingTask.id) {
-              return {
-                ...t,
-                isCompleted: true,
-                completedAt: new Date().toISOString(),
-                evaluation,
-                remarks,
-              };
-            }
-            return t;
-          });
-
-          saveTasks(updatedTasks);
-          setEvaluatingTask(null);
-        };
-
-        const handleDeleteTask = (taskId) => {
-          if (window.confirm('Bạn có chắc chắn muốn xóa công việc này không? Dữ liệu đã xóa không thể phục hồi.')) {
-            const updated = tasks.filter((t) => t.id !== taskId);
-            saveTasks(updated);
-          }
-        };
-
-        const handleResetData = () => {
-          if (window.confirm('Hành động này sẽ khôi phục lại dữ liệu mẫu gốc ban đầu. Các dự án và hạng mục tự thêm của bạn sẽ bị ghi đè. Bạn có muốn tiếp tục không?')) {
-            loadDefaultMockData();
-          }
-        };
-
-        // Real-time ticking remaining calculation helper
-        const [timeTrigger, setTimeTrigger] = useState(0);
-        useEffect(() => {
-          const timer = setInterval(() => {
-            setTimeTrigger(prev => prev + 1);
-          }, 60000); // refresh time relative strings every 1m
-          return () => clearInterval(timer);
-        }, []);
-
-        // Filter and Search logic
-        const filteredTasks = useMemo(() => {
-          return tasks.filter(t => {
-            const matchesProject = selectedFilterProjectId === 'all' || t.projectId === selectedFilterProjectId;
-            
-            let matchesStatus = true;
-            const isOverdue = !t.isCompleted && new Date(t.planEndTime).getTime() < Date.now();
-            
-            if (statusFilter === 'completed') {
-              matchesStatus = t.isCompleted;
-            } else if (statusFilter === 'active') {
-              matchesStatus = !t.isCompleted && !isOverdue;
-            } else if (statusFilter === 'overdue') {
-              matchesStatus = isOverdue;
-            }
-
-            const matchesKeyword = t.content.toLowerCase().includes(searchQuery.toLowerCase());
-
-            return matchesProject && matchesStatus && matchesKeyword;
-          });
-        }, [tasks, selectedFilterProjectId, statusFilter, searchQuery, timeTrigger]);
-
-        return (
-          <div className="flex flex-col min-h-screen">
-            {/* Header section */}
-            <header className="bg-white dark:bg-slate-900 border-b border-gray-150 dark:border-slate-800 sticky top-0 z-40 shadow-sm transition-all duration-200">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-16 sm:h-20">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-indigo-600 text-white rounded-2xl shadow-md shadow-indigo-500/10">
-                      <Icon name="Briefcase" className="w-5 h-5 sm:w-6 sm:h-6" />
-                    </div>
-                    <div>
-                      <h1 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white font-display tracking-tight leading-none">
-                        QUẢN LÝ TIẾN ĐỘ & HIỆU SUẤT KPI
-                      </h1>
-                      <p className="text-[10px] sm:text-xs text-gray-500 dark:text-slate-400 mt-1 sm:mt-1.5 hidden sm:block font-medium">
-                        Hệ thống tự động theo dõi tiến độ thầu thầu, cảnh báo trễ hạn & nghiệm thu chất lượng
-                      </p>
-                      <p className="text-[9px] text-indigo-600 dark:text-indigo-400 sm:hidden mt-0.5 font-bold">
-                        Hệ thống quản trị tiến độ thầu
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2.5">
-                    {/* Theme switcher */}
-                    <button
-                      type="button"
-                      id="theme-toggle-btn"
-                      onClick={() => setIsDarkMode(!isDarkMode)}
-                      className="p-2.5 bg-slate-50 dark:bg-slate-800 text-gray-500 dark:text-slate-350 hover:bg-slate-100 dark:hover:bg-slate-750 rounded-xl transition duration-150 border border-gray-100 dark:border-slate-800"
-                      title={isDarkMode ? 'Chuyển sang Giao diện Sáng' : 'Chuyển sang Giao diện Tối'}
-                    >
-                      <Icon name={isDarkMode ? 'Sun' : 'Moon'} className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </header>
-
-            {/* Navigation tabs */}
-            <div className="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-850/60 shadow-xs">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex gap-2 sm:gap-4 py-3">
-                  <button
-                    type="button"
-                    id="tab-btn-dashboard"
-                    onClick={() => setCurrentTab('dashboard')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition duration-150 ${
-                      currentTab === 'dashboard'
-                        ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/10'
-                        : 'text-gray-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <Icon name="TrendingUp" className="w-4 h-4" />
-                    <span>Dashboard Hiệu Suất KPI</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    id="tab-btn-tasks"
-                    onClick={() => setCurrentTab('tasks')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition duration-150 ${
-                      currentTab === 'tasks'
-                        ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/10'
-                        : 'text-gray-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <Icon name="ClipboardList" className="w-4 h-4" />
-                    <span>Sổ Nhật Ký Công Việc</span>
-                    <span className="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-extrabold text-[10px] px-1.5 py-0.5 rounded-full border border-indigo-100/30 dark:border-indigo-900/10 ml-0.5">
-                      {tasks.filter(t => !t.isCompleted).length}
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Main Application Content */}
-            <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 w-full animate-fade-in">
-              {currentTab === 'dashboard' ? (
-                <Dashboard 
-                  projects={projects} 
-                  tasks={tasks} 
-                  onResetData={handleResetData} 
-                />
-              ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                  
-                  {/* Left Column: Form adding */}
-                  <div className="lg:col-span-1">
-                    <TaskForm 
-                      projects={projects} 
-                      onAddTask={handleAddTask} 
-                      onAddProject={handleAddProject} 
-                    />
-                  </div>
-
-                  {/* Right Column: Listing and Filters */}
-                  <div className="lg:col-span-2 space-y-4">
-                    {/* Filters bar */}
-                    <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm space-y-4 transition-all duration-200">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-50 dark:border-slate-800 pb-3">
-                        <div className="flex items-center gap-1.5 text-gray-700 dark:text-white">
-                          <Icon name="Filter" className="w-4 h-4 text-indigo-550" />
-                          <span className="font-bold text-sm">Bộ Lọc & Tìm Kiếm Công Việc</span>
-                        </div>
-                        <span className="text-[11px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                          Kết quả: {filteredTasks.length} / {tasks.length} dòng
-                        </span>
-                      </div>
-
-                      {/* Filter Controls Row 1: Project & Status */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">
-                            Lọc theo Dự án
-                          </label>
-                          <select
-                            id="filter-project-select"
-                            className="w-full rounded-xl border border-gray-200 dark:border-slate-800 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                            value={selectedFilterProjectId}
-                            onChange={(e) => setSelectedFilterProjectId(e.target.value)}
-                          >
-                            <option value="all">-- Tất cả Dự án / Gói thầu --</option>
-                            {projects.map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {p.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">
-                            Trạng thái công việc
-                          </label>
-                          <div className="flex gap-1 bg-slate-50 dark:bg-slate-950 p-1 rounded-xl border border-gray-150 dark:border-slate-850">
-                            <button
-                              type="button"
-                              id="filter-status-all"
-                              onClick={() => setStatusFilter('all')}
-                              className={`flex-1 text-center py-1.5 rounded-lg text-xs font-bold transition duration-150 ${
-                                statusFilter === 'all'
-                                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs'
-                                  : 'text-gray-400 dark:text-slate-500 hover:text-gray-600'
-                              }`}
-                            >
-                              Tất cả
-                            </button>
-                            <button
-                              type="button"
-                              id="filter-status-active"
-                              onClick={() => setStatusFilter('active')}
-                              className={`flex-1 text-center py-1.5 rounded-lg text-xs font-bold transition duration-150 ${
-                                statusFilter === 'active'
-                                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs'
-                                  : 'text-gray-400 dark:text-slate-500 hover:text-gray-600'
-                              }`}
-                            >
-                              Đang chạy
-                            </button>
-                            <button
-                              type="button"
-                              id="filter-status-completed"
-                              onClick={() => setStatusFilter('completed')}
-                              className={`flex-1 text-center py-1.5 rounded-lg text-xs font-bold transition duration-150 ${
-                                statusFilter === 'completed'
-                                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs'
-                                  : 'text-gray-400 dark:text-slate-500 hover:text-gray-600'
-                              }`}
-                            >
-                              Đã xong
-                            </button>
-                            <button
-                              type="button"
-                              id="filter-status-overdue"
-                              onClick={() => setStatusFilter('overdue')}
-                              className={`flex-1 text-center py-1.5 rounded-lg text-xs font-bold transition duration-150 ${
-                                statusFilter === 'overdue'
-                                  ? 'bg-white dark:bg-slate-850 text-rose-600 dark:text-rose-400 shadow-xs'
-                                  : 'text-gray-400 dark:text-slate-500 hover:text-gray-600'
-                              }`}
-                            >
-                              Trễ hạn
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Filter Controls Row 2: Search Input */}
-                      <div>
-                        <div className="relative">
-                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
-                            <Icon name="Search" className="w-4 h-4" />
-                          </span>
-                          <input
-                            type="text"
-                            id="search-input"
-                            placeholder="Nhập nội dung công việc để tìm kiếm nhanh..."
-                            className="w-full rounded-xl border border-gray-200 dark:border-slate-800 pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Task Cards List */}
-                    <div className="space-y-3">
-                      {filteredTasks.length === 0 ? (
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-8 text-center transition-all duration-200">
-                          <div className="w-12 h-12 bg-gray-50 dark:bg-slate-850 text-gray-400 dark:text-slate-550 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <Icon name="ClipboardList" className="w-6 h-6" />
-                          </div>
-                          <h4 className="text-sm font-bold text-gray-700 dark:text-slate-350">Không tìm thấy công việc</h4>
-                          <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
-                            Hãy thử đổi bộ lọc dự án, trạng thái hoặc tạo thêm một công việc mới.
-                          </p>
-                        </div>
-                      ) : (
-                        filteredTasks.map((task) => {
-                          const project = projects.find((p) => p.id === task.projectId);
-                          const remaining = getRemainingTimeText(task.planEndTime);
-                          const isOverdue = !task.isCompleted && remaining.isOverdue;
-
-                          return (
-                            <div 
-                              key={task.id} 
-                              className={`bg-white dark:bg-slate-900 rounded-2xl border p-5 shadow-xs transition-all duration-150 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between ${
-                                task.isCompleted
-                                  ? 'border-gray-100 dark:border-slate-850 opacity-90'
-                                  : isOverdue
-                                    ? 'border-rose-250 dark:border-rose-950/50 bg-rose-50/10 dark:bg-rose-950/5'
-                                    : 'border-gray-100 dark:border-slate-800/80 hover:border-indigo-200 dark:hover:border-indigo-950/45'
-                              }`}
-                            >
-                              <div className="space-y-3 flex-1 min-w-0">
-                                {/* Project badge name */}
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <span className="inline-flex items-center gap-1 text-[10px] font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50/70 dark:bg-indigo-950/40 px-2.5 py-0.5 rounded-lg border border-indigo-100/30 dark:border-indigo-900/10 truncate max-w-[280px] sm:max-w-md">
-                                    <Icon name="Folder" className="w-3 h-3 shrink-0" />
-                                    {project ? project.name : 'Dự án không xác định'}
-                                  </span>
-                                  
-                                  {/* Overdue/On-time indicator status badge */}
-                                  {task.isCompleted ? (
-                                    <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-lg ${
-                                      task.evaluation === 'Dat'
-                                        ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100/50 dark:border-emerald-900/20'
-                                        : 'bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-450 border border-rose-100/50 dark:border-rose-950/20'
-                                    }`}>
-                                      <Icon name={task.evaluation === 'Dat' ? 'CheckCircle2' : 'AlertTriangle'} className="w-3 h-3" />
-                                      {task.evaluation === 'Dat' ? 'Nghiệm thu: ĐẠT' : 'Nghiệm thu: CHƯA ĐẠT'}
-                                    </span>
-                                  ) : isOverdue ? (
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 px-2.5 py-0.5 rounded-lg border border-rose-200/50 dark:border-rose-900/30 animate-pulse">
-                                      <Icon name="AlertTriangle" className="w-3 h-3" />
-                                      TRỄ HẠN
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 px-2.5 py-0.5 rounded-lg border border-sky-100/40 dark:border-sky-900/10">
-                                      {remaining.text}
-                                    </span>
-                                  )}
-                                </div>
-
-                                {/* Main Task Description */}
-                                <p className={`text-sm sm:text-base font-semibold leading-relaxed ${
-                                  task.isCompleted 
-                                    ? 'line-through text-slate-400 dark:text-slate-550 font-normal' 
-                                    : 'text-slate-800 dark:text-slate-100'
-                                }`}>
-                                  {task.content}
-                                </p>
-
-                                {/* Date-time log timelines */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-medium text-slate-400 dark:text-slate-500 border-t border-slate-50 dark:border-slate-850/60 pt-3">
-                                  <div className="space-y-0.5">
-                                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-350 dark:text-slate-600">Bắt đầu thầu:</p>
-                                    <p className="text-slate-650 dark:text-slate-400">{formatReadableDateTime(task.startTime)}</p>
-                                  </div>
-                                  <div className="space-y-0.5">
-                                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-350 dark:text-slate-600">
-                                      {task.isCompleted ? 'Nghiệm thu thực tế:' : 'Hạn hoàn thành kế hoạch:'}
-                                    </p>
-                                    <p className={task.isCompleted ? 'text-emerald-600 dark:text-emerald-450 font-semibold' : isOverdue ? 'text-rose-650 dark:text-rose-400 font-semibold' : 'text-slate-650 dark:text-slate-400'}>
-                                      {task.isCompleted 
-                                        ? formatReadableDateTime(task.completedAt) 
-                                        : formatReadableDateTime(task.planEndTime)}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                {/* Custom Remarks / Lessons learned description when completed */}
-                                {task.isCompleted && task.remarks && (
-                                  <div className="bg-slate-50/60 dark:bg-slate-950/30 p-3 rounded-xl border border-gray-100 dark:border-slate-850/60 text-xs italic">
-                                    <span className="font-bold text-slate-450 dark:text-slate-500 block mb-1 uppercase tracking-wider text-[9px] not-italic">Nhận xét & Biện pháp:</span>
-                                    <span className="text-slate-600 dark:text-slate-350">"{task.remarks}"</span>
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Actions container row */}
-                              <div className="flex sm:flex-col items-center justify-end gap-2 shrink-0 border-t sm:border-t-0 border-slate-50 dark:border-slate-850 pt-3 sm:pt-0">
-                                {!task.isCompleted && (
-                                  <button
-                                    type="button"
-                                    id={`complete-btn-${task.id}`}
-                                    onClick={() => handleCompleteClick(task)}
-                                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition duration-150 cursor-pointer w-full active:translate-y-px"
-                                  >
-                                    <Icon name="CheckCircle2" className="w-4 h-4" />
-                                    <span>Nghiệm thu KPI</span>
-                                  </button>
-                                )}
-                                
-                                <button
-                                  type="button"
-                                  id={`delete-btn-${task.id}`}
-                                  onClick={() => handleDeleteTask(task.id)}
-                                  className="p-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-xl transition duration-150 cursor-pointer"
-                                  title="Xóa công việc này"
-                                >
-                                  <Icon name="Trash2" className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-
-                </div>
-              )}
-            </main>
-
-            {/* Footer */}
-            <footer className="bg-white dark:bg-slate-900 border-t border-gray-150 dark:border-slate-850 py-5 transition-all duration-200">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-450 dark:text-slate-500 font-medium">
-                <p>© 2026 Quản Lý Hiệu Suất Đấu Thầu & KPI. Tối ưu hóa 100% chạy offline trực tiếp khi kích đúp chuột.</p>
-                <p className="mt-1 font-semibold text-indigo-500">Thiết kế bởi Tổ chức Quản trị thầu thầu</p>
-              </div>
-            </footer>
-
-            {/* KPI Evaluation Overlay modal popup */}
-            <TaskEvaluationModal
-              isOpen={!!evaluatingTask}
-              taskContent={evaluatingTask ? evaluatingTask.content : ''}
-              onClose={() => setEvaluatingTask(null)}
-              onSubmit={handleEvaluationSubmit}
-            />
-          </div>
-        );
+      const startMs = new Date(startTime).getTime();
+      const endMs = new Date(planEndTime).getTime();
+      if (endMs <= startMs) {
+        showFormError('task-form-error', 'Thời hạn hoàn thành kế hoạch phải sau thời gian bắt đầu!');
+        return;
       }
 
-      // Root render initializer
-      const container = document.getElementById('root');
-      const root = ReactDOM.createRoot(container);
-      root.render(<App />);
-    </script>
-  </body>
+      if (taskId) {
+        // Edit Mode
+        const taskIdx = state.tasks.findIndex(t => t.id === taskId);
+        if (taskIdx > -1) {
+          state.tasks[taskIdx].projectId = projectId;
+          state.tasks[taskIdx].content = content;
+          state.tasks[taskIdx].startTime = startTime;
+          state.tasks[taskIdx].planEndTime = planEndTime;
+          showToast('Đã lưu chỉnh sửa công việc thành công!');
+        }
+      } else {
+        // Create Mode
+        const newTask = {
+          id: 'task-' + Date.now(),
+          projectId,
+          content,
+          startTime,
+          planEndTime,
+          isCompleted: false
+        };
+        state.tasks.unshift(newTask);
+        showToast('Đã thêm công việc mới vào nhật ký!');
+      }
+
+      saveState();
+      resetTaskForm();
+      renderApp();
+    }
+
+    function showFormError(elId, msg) {
+      const el = document.getElementById(elId);
+      el.innerText = msg;
+      el.classList.remove('hidden');
+    }
+
+    function handleEditTask(taskId) {
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      document.getElementById('edit-task-id').value = task.id;
+      document.getElementById('task-form-project-id').value = task.projectId;
+      document.getElementById('task-form-content').value = task.content;
+      document.getElementById('task-form-start-time').value = task.startTime.substring(0, 16);
+      document.getElementById('task-form-plan-end').value = task.planEndTime.substring(0, 16);
+
+      document.getElementById('form-task-title').innerText = 'Chỉnh sửa Công Việc';
+      document.getElementById('task-form-cancel-btn').classList.remove('hidden');
+      
+      // Auto scroll to form on mobile
+      document.getElementById('task-form').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function resetTaskForm() {
+      document.getElementById('edit-task-id').value = '';
+      document.getElementById('task-form-project-id').value = '';
+      document.getElementById('task-form-content').value = '';
+      document.getElementById('task-form-start-time').value = formatDateTimeLocal(new Date());
+      
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      document.getElementById('task-form-plan-end').value = formatDateTimeLocal(tomorrow);
+
+      document.getElementById('form-task-title').innerText = 'Thêm Nhiệm Vụ Mới';
+      document.getElementById('task-form-cancel-btn').classList.add('hidden');
+      document.getElementById('task-form-error').classList.add('hidden');
+    }
+
+    function handleDeleteTask(taskId) {
+      if (confirm('Bạn có chắc chắn muốn xóa công việc này khỏi nhật ký theo dõi? Hành động này không thể hoàn tác!')) {
+        state.tasks = state.tasks.filter(t => t.id !== taskId);
+        saveState();
+        renderApp();
+        showToast('Đã xóa công việc khỏi nhật ký thành công!', 'error');
+      }
+    }
+
+    function reopenTask(taskId) {
+      const idx = state.tasks.findIndex(t => t.id === taskId);
+      if (idx > -1) {
+        state.tasks[idx].isCompleted = false;
+        delete state.tasks[idx].completedAt;
+        delete state.tasks[idx].evaluation;
+        delete state.tasks[idx].remarks;
+        saveState();
+        renderApp();
+        showToast('Đã khôi phục lại trạng thái đang thực hiện cho công việc!');
+      }
+    }
+
+    // Project Form Submit
+    function handleProjectFormSubmit(e) {
+      e.preventDefault();
+      const errEl = document.getElementById('project-form-error');
+      errEl.classList.add('hidden');
+
+      const projectId = document.getElementById('edit-project-id').value;
+      const name = document.getElementById('project-form-name').value.trim();
+
+      if (!name) {
+        showFormError('project-form-error', 'Vui lòng điền tên gói thầu / dự án cụ thể!');
+        return;
+      }
+
+      if (projectId) {
+        // Edit project
+        const idx = state.projects.findIndex(p => p.id === projectId);
+        if (idx > -1) {
+          state.projects[idx].name = name;
+          showToast('Đã lưu chỉnh sửa tên gói thầu thành công!');
+        }
+      } else {
+        // Create project
+        const newProj = {
+          id: 'proj-' + Date.now(),
+          name,
+          createdAt: new Date().toISOString()
+        };
+        state.projects.unshift(newProj);
+        showToast('Đã thêm gói thầu theo dõi mới thành công!');
+      }
+
+      saveState();
+      resetProjectForm();
+      renderApp();
+    }
+
+    function handleEditProject(projectId) {
+      const proj = state.projects.find(p => p.id === projectId);
+      if (!proj) return;
+
+      document.getElementById('edit-project-id').value = proj.id;
+      document.getElementById('project-form-name').value = proj.name;
+      document.getElementById('form-project-title').innerText = 'Chỉnh sửa tên Gói thầu';
+      document.getElementById('project-form-cancel-btn').classList.remove('hidden');
+
+      document.getElementById('project-form').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function resetProjectForm() {
+      document.getElementById('edit-project-id').value = '';
+      document.getElementById('project-form-name').value = '';
+      document.getElementById('form-project-title').innerText = 'Tạo Gói Thầu Mới';
+      document.getElementById('project-form-cancel-btn').classList.add('hidden');
+      document.getElementById('project-form-error').classList.add('hidden');
+    }
+
+    function handleDeleteProject(projectId) {
+      const projTasks = state.tasks.filter(t => t.projectId === projectId);
+      const confirmMsg = projTasks.length > 0 
+        ? `Gói thầu này đang có ${projTasks.length} công việc đính kèm! Xóa gói thầu sẽ đồng thời xóa toàn bộ công việc liên quan. Bạn có chắc chắn muốn xóa không?`
+        : `Bạn có chắc chắn muốn xóa hoàn toàn gói thầu này khỏi danh sách?`;
+
+      if (confirm(confirmMsg)) {
+        state.projects = state.projects.filter(p => p.id !== projectId);
+        state.tasks = state.tasks.filter(t => t.projectId !== projectId);
+        saveState();
+        renderApp();
+        showToast('Đã xóa gói thầu và toàn bộ công việc liên quan!', 'error');
+      }
+    }
+
+    // ---------------------------------------------------------
+    // 8. KPI EVALUATION MODAL ACTIONS
+    // ---------------------------------------------------------
+    function openEvaluationModal(taskId) {
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      state.isEvaluatingTaskId = taskId;
+      document.getElementById('eval-task-content').innerText = `"${task.content}"`;
+      document.getElementById('eval-remarks').value = '';
+      document.getElementById('eval-modal-error').classList.add('hidden');
+      setEvalSelection('Dat');
+
+      document.getElementById('evaluation-modal').classList.remove('hidden');
+    }
+
+    function closeEvalModal() {
+      document.getElementById('evaluation-modal').classList.add('hidden');
+      state.isEvaluatingTaskId = null;
+    }
+
+    function setEvalSelection(status) {
+      state.evaluatingSelection = status;
+      const passBtn = document.getElementById('eval-opt-pass');
+      const failBtn = document.getElementById('eval-opt-fail');
+
+      if (status === 'Dat') {
+        passBtn.className = "flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-400 ring-4 ring-emerald-500/10 font-bold text-xs transition cursor-pointer";
+        failBtn.className = "flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-gray-500 dark:text-slate-400 font-bold text-xs transition cursor-pointer";
+      } else {
+        passBtn.className = "flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-gray-500 dark:text-slate-400 font-bold text-xs transition cursor-pointer";
+        failBtn.className = "flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-rose-500 bg-rose-50 dark:bg-rose-950/30 text-rose-800 dark:text-rose-400 ring-4 ring-rose-500/10 font-bold text-xs transition cursor-pointer";
+      }
+    }
+
+    function saveEvaluation() {
+      const remarks = document.getElementById('eval-remarks').value.trim();
+      const errEl = document.getElementById('eval-modal-error');
+
+      if (!remarks) {
+        errEl.innerText = 'Vui lòng ghi chú nhận xét hoặc giải pháp chất lượng làm bài học kinh nghiệm!';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      const taskIdx = state.tasks.findIndex(t => t.id === state.isEvaluatingTaskId);
+      if (taskIdx > -1) {
+        state.tasks[taskIdx].isCompleted = true;
+        state.tasks[taskIdx].completedAt = new Date().toISOString();
+        state.tasks[taskIdx].evaluation = state.evaluatingSelection;
+        state.tasks[taskIdx].remarks = remarks;
+
+        saveState();
+        closeEvalModal();
+        renderApp();
+        showToast('Nghiệm thu đánh giá KPI chất lượng thành công!');
+      }
+    }
+
+    // ---------------------------------------------------------
+    // 9. EXPORT DATABASE REPORT TO EXCEL (CSV WITH UTF-8 BOM)
+    // ---------------------------------------------------------
+    function exportTasksToCSV() {
+      const headers = [
+        'Mã công việc',
+        'Tên Dự án/Gói thầu',
+        'Nội dung công việc',
+        'Thời gian bắt đầu',
+        'Hạn chót kế hoạch',
+        'Trạng thái',
+        'Thời gian thực tế nghiệm thu',
+        'Kết quả đánh giá',
+        'Nhận xét / Bài học rút ra'
+      ];
+
+      const rows = state.tasks.map(task => {
+        const project = state.projects.find(p => p.id === task.projectId);
+        const projectName = project ? project.name : 'Không xác định';
+
+        let statusText = 'Đang thực hiện';
+        if (task.isCompleted) {
+          statusText = 'Đã nghiệm thu';
+        } else {
+          const isOverdue = new Date(task.planEndTime).getTime() < Date.now();
+          if (isOverdue) statusText = 'Trễ hạn';
+        }
+
+        const evalText = task.isCompleted
+          ? (task.evaluation === 'Dat' ? 'Đạt yêu cầu' : 'Chưa đạt')
+          : 'Chưa đánh giá';
+
+        return [
+          task.id,
+          projectName,
+          task.content,
+          formatReadableDateTime(task.startTime),
+          formatReadableDateTime(task.planEndTime),
+          statusText,
+          task.completedAt ? formatReadableDateTime(task.completedAt) : '',
+          evalText,
+          task.remarks || ''
+        ];
+      });
+
+      const csvContent = [
+        headers.map(h => `"${h.replace(/"/g, '""')}"`).join(','),
+        ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      ].join('\r\n');
+
+      // Export using UTF-8 BOM to display accented Vietnamese correctly in Excel
+      const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], {
+        type: 'text/csv;charset=utf-8;'
+      });
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      
+      const date = new Date();
+      const dateStr = `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`;
+      
+      link.href = url;
+      link.setAttribute('download', `Bao_Cao_Tien_Do_Tender_KPI_${dateStr}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      showToast('Đã tải xuống file báo cáo Excel thành công!');
+    }
+
+    // Launch App
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
 </html>
