@@ -3,12 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Quản Lý Tiến Độ Gói Thầu & Đánh Giá Hiệu Suất KPI</title>
+    <title>Quản Lý Công Việc & Hiệu Suất KPI Gói Thầu</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;650;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -18,8 +18,13 @@
         theme: {
           extend: {
             colors: {
-              slate: {
-                850: '#1e293b',
+              brand: {
+                50: '#eef2ff',
+                100: '#e0e7ff',
+                500: '#6366f1',
+                600: '#4f46e5',
+                700: '#4338ca',
+                950: '#0c0a09',
               }
             },
             fontFamily: {
@@ -36,21 +41,15 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     
-    <!-- Babel CDN for In-browser JSX Compilation -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
+    <!-- Babel Standalone for In-browser JSX Compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Custom CSS styles -->
+    <!-- Global CSS Styles -->
     <style type="text/css">
       body {
         font-family: 'Inter', sans-serif;
       }
-      .font-display {
-        font-family: 'Space Grotesk', sans-serif;
-      }
-      .font-mono {
-        font-family: 'JetBrains Mono', monospace;
-      }
-      /* Custom scrollbar for better visuals */
+      /* Custom scrollbar for premium visuals */
       ::-webkit-scrollbar {
         width: 6px;
         height: 6px;
@@ -66,23 +65,32 @@
         background: #cbd5e1;
         border-radius: 4px;
       }
+      .animate-fade-in {
+        animation: fadeIn 0.3s ease-out forwards;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
     </style>
   </head>
-  <body class="bg-slate-50 dark:bg-slate-950 text-gray-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+  <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
     <div id="root"></div>
 
-    <!-- Main React App Script (Compiled by Babel in-browser) -->
+    <!-- Main React App Script (Compiled in-browser) -->
     <script type="text/babel">
       const { useState, useEffect, useRef, useMemo } = React;
 
-      // Safe Storage Helper to prevent crashes under file:// protocol or incognito modes
+      // =========================================================
+      // 1. SAFE LOCAL STORAGE (Supports running in file:// mode)
+      // =========================================================
       const safeStorage = {
         _memory: {},
         getItem(key) {
           try {
             return localStorage.getItem(key);
           } catch (e) {
-            console.warn("localStorage.getItem is blocked or unavailable:", e);
+            console.warn("localStorage is not available, using in-memory fallback:", e);
             return this._memory[key] || null;
           }
         },
@@ -90,111 +98,149 @@
           try {
             localStorage.setItem(key, value);
           } catch (e) {
-            console.warn("localStorage.setItem is blocked or unavailable:", e);
+            console.warn("localStorage is not available, using in-memory fallback:", e);
             this._memory[key] = String(value);
           }
         }
       };
 
-      // ==========================================
-      // SVG ICONS (Inline for 100% self-contained)
-      // ==========================================
+      // =========================================================
+      // 2. OFFLINE-COMPATIBLE SVG ICONS (0 latency, 0 external calls)
+      // =========================================================
       const Icons = {
-        Dashboard: () => (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" />
+        ClipboardList: (props) => (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+            <path d="M12 11h4" /><path d="M12 16h4" /><path d="M8 11h.01" /><path d="M8 16h.01" />
           </svg>
         ),
-        TaskList: () => (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        FolderPlus: (props) => (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z" />
+            <line x1="12" y1="10" x2="12" y2="16" /><line x1="9" y1="13" x2="15" y2="13" />
           </svg>
         ),
-        Project: () => (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+        Folder: (props) => (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
           </svg>
         ),
-        Add: () => (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+        Briefcase: (props) => (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
           </svg>
         ),
-        Sun: () => (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+        CheckCircle2: (props) => (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+            <path d="m9 12 2 2 4-4" />
           </svg>
         ),
-        Moon: () => (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        AlertTriangle: (props) => (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+            <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
           </svg>
         ),
-        FileDown: () => (
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        TrendingUp: (props) => (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+            <polyline points="17 6 23 6 23 12" />
           </svg>
         ),
-        Trash: () => (
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        CalendarCheck2: (props) => (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+            <path d="m9 16 2 2 4-4" />
           </svg>
         ),
-        Edit: () => (
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+        FileCheck2: (props) => (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4" />
+            <polyline points="14 2 14 8 20 8" />
+            <path d="m3 15 2 2 4-4" />
           </svg>
         ),
-        Reset: () => (
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 15H19" />
+        Trash2: (props) => (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            <line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" />
           </svg>
         ),
-        Check: () => (
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        Check: (props) => (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <polyline points="20 6 9 17 4 12" />
           </svg>
         ),
-        Alert: () => (
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        X: (props) => (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         ),
-        Clock: () => (
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        Award: (props) => (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <circle cx="12" cy="8" r="7" />
+            <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
           </svg>
         ),
-        ChevronRight: () => (
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        FileDown: (props) => (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
           </svg>
         ),
-        Award: () => (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+        RefreshCw: (props) => (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
           </svg>
         ),
-        Search: () => (
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        Moon: (props) => (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
           </svg>
         ),
-        TrendingUp: () => (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+        Sun: (props) => (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <circle cx="12" cy="12" r="5" />
+            <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+            <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
           </svg>
         ),
-        FolderPlus: () => (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+        Search: (props) => (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        ),
+        Filter: (props) => (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+          </svg>
+        ),
+        Info: (props) => (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
           </svg>
         )
       };
 
-      // ==========================================
-      // DATE/TIME UTILITIES
-      // ==========================================
+      const Icon = ({ name, className = "w-4 h-4", ...props }) => {
+        const IconComponent = Icons[name] || Icons.Info;
+        return <IconComponent className={className} {...props} />;
+      };
+
+      // =========================================================
+      // 3. CORE UTILITY FUNCTIONS (Formatters & Time calculations)
+      // =========================================================
       function formatDateTimeLocal(date) {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -219,7 +265,7 @@
         const diff = new Date(planEndTimeStr).getTime() - Date.now();
 
         if (diff <= 0) {
-          return { text: 'TRỄ HẠN', isOverdue: true };
+          return { text: 'TRỄ HẸN', isOverdue: true };
         }
 
         const minutesTotal = Math.floor(diff / (60 * 1000));
@@ -248,9 +294,6 @@
         };
       }
 
-      // ==========================================
-      // MOCK DATA
-      // ==========================================
       function getMockProjects() {
         const nowMs = Date.now();
         return [
@@ -336,13 +379,10 @@
         ];
       }
 
-      // ==========================================
-      // EXPORT TO EXCEL (CSV UTF-8 with BOM)
-      // ==========================================
       function exportTasksToCSV(projects, tasks) {
         const headers = [
           'Mã công việc',
-          'Tên Dự án',
+          'Tên Dự án/Gói thầu',
           'Nội dung công việc',
           'Thời gian bắt đầu',
           'Hạn chót kế hoạch',
@@ -402,16 +442,16 @@
         const dateStr = `${day}-${month}-${year}`;
         
         link.href = url;
-        link.setAttribute('download', `bao_cao_theo_doi_va_hieu_suat_${dateStr}.csv`);
+        link.setAttribute('download', `Bao_Cao_Theo_Doi_Va_Hieu_Suat_KPI_${dateStr}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
       }
 
-      // ==========================================
-      // COMPONENT: TASK FORM
-      // ==========================================
+      // =========================================================
+      // 4. SUB-COMPONENT: TASK FORM (Includes project creator)
+      // =========================================================
       function TaskForm({ projects, onAddTask, onAddProject }) {
         const [selectedProjectId, setSelectedProjectId] = useState('');
         const [content, setContent] = useState('');
@@ -491,31 +531,29 @@
         };
 
         return (
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 shadow-sm transition-colors duration-200">
-            <div className="flex items-center gap-2 mb-5 border-b border-gray-50 dark:border-slate-800/80 pb-3">
-              <span className="text-indigo-600 dark:text-indigo-400">
-                <Icons.TaskList />
-              </span>
-              <h3 className="font-semibold text-lg text-gray-800 dark:text-white">Thêm Công Việc Mới</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 shadow-sm transition-all duration-200">
+            <div className="flex items-center gap-2.5 mb-5 border-b border-gray-100 dark:border-slate-800 pb-3">
+              <Icon name="ClipboardList" className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <h3 className="font-bold text-lg text-gray-800 dark:text-white">Thêm Công Việc Giao Thầu Mới</h3>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                  Dự án / Gói thầu <span className="text-red-500">*</span>
+                <label className="block text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
+                  Chọn Dự án / Gói thầu <span className="text-red-500">*</span>
                 </label>
 
                 {!isAddingProject ? (
                   <div className="flex gap-2">
                     <select
                       id="project-select"
-                      className="flex-1 rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2 text-sm bg-white dark:bg-slate-950 text-gray-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                      className="flex-1 rounded-xl border border-gray-200 dark:border-slate-800 px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-950 text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition duration-150"
                       value={selectedProjectId}
                       onChange={(e) => setSelectedProjectId(e.target.value)}
                     >
-                      <option value="" className="dark:bg-slate-950">-- Chọn Dự án / Gói thầu --</option>
+                      <option value="">-- Chọn Dự án / Gói thầu --</option>
                       {projects.map((p) => (
-                        <option key={p.id} value={p.id} className="dark:bg-slate-950">
+                        <option key={p.id} value={p.id}>
                           {p.name}
                         </option>
                       ))}
@@ -524,32 +562,32 @@
                       type="button"
                       id="toggle-add-project-btn"
                       onClick={() => setIsAddingProject(true)}
-                      className="flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/70 px-3 py-2 rounded-lg text-sm font-medium transition duration-205 border border-indigo-100/50 dark:border-indigo-900/30 shrink-0 cursor-pointer"
+                      className="flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/70 px-4 py-2.5 rounded-xl text-xs font-semibold transition duration-150 border border-indigo-100/50 dark:border-indigo-900/30"
                       title="Thêm nhanh Dự án mới"
                     >
-                      <Icons.FolderPlus />
-                      <span className="ml-1.5 hidden sm:inline text-xs font-semibold">Thêm nhanh</span>
+                      <Icon name="FolderPlus" className="w-4 h-4 mr-1.5" />
+                      <span>Tạo mới</span>
                     </button>
                   </div>
                 ) : (
-                  <div className="bg-slate-50 dark:bg-slate-950/50 p-3 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 space-y-2">
+                  <div className="bg-indigo-50/30 dark:bg-indigo-950/20 p-4 rounded-xl border border-indigo-100/30 dark:border-indigo-900/20 space-y-2.5 animate-fade-in">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-slate-650 dark:text-slate-400 uppercase tracking-wider">Tạo Dự án / Gói thầu mới</span>
+                      <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Tạo dự án / Gói thầu mới</span>
                       <button
                         type="button"
                         id="cancel-add-project-btn"
                         onClick={() => setIsAddingProject(false)}
-                        className="text-gray-400 hover:text-gray-600 dark:hover:text-white cursor-pointer"
+                        className="text-gray-400 hover:text-gray-650 dark:hover:text-white"
                       >
-                        <Icons.Trash />
+                        <Icon name="X" className="w-4 h-4" />
                       </button>
                     </div>
                     <div className="flex gap-2">
                       <input
                         type="text"
                         id="new-project-input"
-                        placeholder="Ví dụ: Gói thầu XL-02..."
-                        className="flex-1 rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-1.5 text-sm bg-white dark:bg-slate-950 text-gray-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                        placeholder="Nhập tên gói thầu / dự án chi tiết..."
+                        className="flex-1 rounded-xl border border-gray-200 dark:border-slate-800 px-3.5 py-2 text-sm bg-white dark:bg-slate-950 text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                         value={newProjectName}
                         onChange={(e) => setNewProjectName(e.target.value)}
                         onKeyDown={(e) => {
@@ -564,9 +602,9 @@
                         type="button"
                         id="save-project-btn"
                         onClick={handleQuickAddProject}
-                        className="bg-indigo-600 hover:bg-indigo-705 text-white rounded-lg p-2.5 transition duration-200 flex items-center justify-center cursor-pointer"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 py-2 transition duration-150 flex items-center justify-center font-semibold text-sm"
                       >
-                        <Icons.Check />
+                        <Icon name="Check" className="w-4 h-4 mr-1" /> Lưu
                       </button>
                     </div>
                     {projectError && <p className="text-xs text-red-500">{projectError}</p>}
@@ -575,14 +613,14 @@
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
                   Nội dung công việc cụ thể <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   id="task-content-input"
                   rows={3}
-                  placeholder="Mô tả cụ thể nhiệm vụ, gói tài liệu, hồ sơ pháp lý, kỹ thuật..."
-                  className="w-full rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2 text-sm bg-white dark:bg-slate-950 text-gray-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-gray-400 dark:placeholder:text-slate-550"
+                  placeholder="Mô tả cụ thể khối lượng công việc, yêu cầu chất lượng và nội dung cần lập/phê duyệt..."
+                  className="w-full rounded-xl border border-gray-200 dark:border-slate-800 px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-950 text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-gray-400 dark:placeholder:text-slate-600 transition duration-155"
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                 />
@@ -590,25 +628,25 @@
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
                     Thời gian bắt đầu <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="datetime-local"
                     id="start-time-input"
-                    className="w-full rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-950"
+                    className="w-full rounded-xl border border-gray-200 dark:border-slate-800 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-950"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                    Kế hoạch hoàn thành (Deadline) <span className="text-red-500">*</span>
+                  <label className="block text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
+                    Hạn chót hoàn thành <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="datetime-local"
                     id="plan-end-time-input"
-                    className="w-full rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-950"
+                    className="w-full rounded-xl border border-gray-200 dark:border-slate-800 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-950"
                     value={planEndTime}
                     onChange={(e) => setPlanEndTime(e.target.value)}
                   />
@@ -616,15 +654,13 @@
               </div>
 
               {formError && (
-                <div className="bg-red-50 text-red-650 text-xs px-3 py-2 rounded-lg border border-red-100 dark:bg-red-950/20 dark:border-red-900/30">
+                <div className="bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 text-xs px-3.5 py-2.5 rounded-xl border border-rose-100 dark:border-rose-900/30 font-medium">
                   {formError}
                 </div>
               )}
               {successMsg && (
-                <div className="bg-emerald-50 text-emerald-650 text-xs px-3 py-2 rounded-lg border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30 flex items-center gap-1">
-                  <span className="text-emerald-600">
-                    <Icons.Check />
-                  </span>
+                <div className="bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 text-xs px-3.5 py-2.5 rounded-xl border border-emerald-100 dark:border-emerald-900/30 flex items-center gap-1.5 font-medium">
+                  <Icon name="Check" className="w-4 h-4 shrink-0" />
                   <span>{successMsg}</span>
                 </div>
               )}
@@ -632,19 +668,19 @@
               <button
                 type="submit"
                 id="add-task-submit-btn"
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-2.5 px-4 font-semibold text-sm transition duration-200 flex items-center justify-center gap-2 shadow-sm active:translate-y-px cursor-pointer"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-3 px-4 font-bold text-sm transition duration-150 flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:translate-y-0.5"
               >
-                <Icons.Add />
-                <span>Tạo công việc thực hiện</span>
+                <Icon name="CheckCircle2" className="w-5 h-5" />
+                <span>Thêm Vào Nhật Ký Công Việc</span>
               </button>
             </form>
           </div>
         );
       }
 
-      // ==========================================
-      // COMPONENT: TASK EVALUATION MODAL
-      // ==========================================
+      // =========================================================
+      // 5. SUB-COMPONENT: TASK EVALUATION MODAL (Complete/KPI Evaluation)
+      // =========================================================
       function TaskEvaluationModal({ isOpen, taskContent, onClose, onSubmit }) {
         const [evaluation, setEvaluation] = useState('Dat');
         const [remarks, setRemarks] = useState('');
@@ -654,7 +690,7 @@
 
         const handleSave = () => {
           if (!remarks.trim()) {
-            setError('Vui lòng nhập nhận xét chi tiết và rút ra bài học kinh nghiệm để hoàn tất!');
+            setError('Vui lòng ghi lại nhận xét, kết quả hoặc bài học kinh nghiệm để lưu lịch sử!');
             return;
           }
           onSubmit(evaluation, remarks.trim());
@@ -664,90 +700,84 @@
         };
 
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/65 backdrop-blur-xs">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
             <div 
               id="evaluation-modal-container"
-              className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 overflow-hidden transform transition-all"
+              className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-150 dark:border-slate-800 overflow-hidden transform transition-all animate-fade-in"
             >
-              <div className="flex items-center justify-between px-6 py-4 bg-gray-50 dark:bg-slate-950/40 border-b border-gray-100 dark:border-slate-800">
+              <div className="flex items-center justify-between px-6 py-4 bg-gray-50 dark:bg-slate-950/50 border-b border-gray-100 dark:border-slate-850">
                 <div className="flex items-center gap-2">
-                  <span className="text-indigo-600 dark:text-indigo-400">
-                    <Icons.Award />
-                  </span>
-                  <h3 className="text-lg font-bold text-gray-800 dark:text-white">Đánh Giá Kết Quả Công Việc</h3>
+                  <Icon name="Award" className="w-5 h-5 text-indigo-650 dark:text-indigo-400" />
+                  <h3 className="text-lg font-bold text-gray-800 dark:text-white">Đánh Giá Nghiệm Thu KPI</h3>
                 </div>
                 <button
                   type="button"
                   id="close-modal-btn"
                   onClick={onClose}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-305 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition duration-150 cursor-pointer"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition duration-150"
                 >
-                  <Icons.Trash />
+                  <Icon name="X" className="w-5 h-5" />
                 </button>
               </div>
 
               <div className="p-6 space-y-4">
                 <div>
-                  <span className="text-xs font-semibold text-gray-405 dark:text-slate-500 uppercase tracking-wider block mb-1">
-                    Công việc vừa hoàn thành:
+                  <span className="text-[11px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider block mb-1.5">
+                    Nội dung công việc hoàn thành:
                   </span>
-                  <p className="text-sm font-medium text-gray-700 dark:text-slate-300 bg-indigo-50/40 dark:bg-indigo-950/15 p-3 rounded-lg border border-indigo-100/40 dark:border-indigo-950/20 italic">
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-350 bg-indigo-50/50 dark:bg-indigo-950/20 p-3.5 rounded-xl border border-indigo-100/50 dark:border-indigo-950/30 italic">
                     "{taskContent}"
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-                    Kết quả thẩm định / đánh giá <span className="text-red-500">*</span>
+                  <label className="block text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+                    Nghiệm thu chất lượng <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       id="eval-btn-dat"
                       onClick={() => setEvaluation('Dat')}
-                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-sm font-semibold transition duration-200 cursor-pointer ${
+                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-xs font-bold transition duration-150 ${
                         evaluation === 'Dat'
-                          ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-400 ring-2 ring-emerald-500/10'
-                          : 'border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-900'
+                          ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-400 ring-4 ring-emerald-500/10'
+                          : 'border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-900'
                       }`}
                     >
-                      <span className={evaluation === 'Dat' ? 'text-emerald-600' : 'text-gray-400'}>
-                        <Icons.Check />
-                      </span>
-                      <span>Đạt yêu cầu</span>
+                      <Icon name="CheckCircle2" className={`w-5 h-5 ${evaluation === 'Dat' ? 'text-emerald-600' : 'text-gray-450'}`} />
+                      <span>ĐẠT YÊU CẦU</span>
                     </button>
 
                     <button
                       type="button"
                       id="eval-btn-khongdat"
                       onClick={() => setEvaluation('KhongDat')}
-                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-sm font-semibold transition duration-200 cursor-pointer ${
+                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-xs font-bold transition duration-150 ${
                         evaluation === 'KhongDat'
-                          ? 'border-rose-500 bg-rose-50 dark:bg-rose-950/30 text-rose-800 dark:text-rose-400 ring-2 ring-rose-500/10'
-                          : 'border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-900'
+                          ? 'border-rose-500 bg-rose-50 dark:bg-rose-950/30 text-rose-800 dark:text-rose-400 ring-4 ring-rose-500/10'
+                          : 'border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-900'
                       }`}
                     >
-                      <span className={evaluation === 'KhongDat' ? 'text-rose-600' : 'text-gray-400'}>
-                        <Icons.Alert />
-                      </span>
-                      <span>Không đạt</span>
+                      <Icon name="AlertTriangle" className={`w-5 h-5 ${evaluation === 'KhongDat' ? 'text-rose-600' : 'text-gray-450'}`} />
+                      <span>CHƯA ĐẠT</span>
                     </button>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                    Nhận xét chi tiết & Bài học kinh nghiệm <span className="text-red-500">*</span>
+                  <label className="block text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+                    Nhận xét / Bài học rút ra & Giải pháp <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     id="evaluation-remarks-input"
                     rows={4}
                     placeholder={
                       evaluation === 'Dat'
-                        ? 'Ghi lại lý do đạt kết quả xuất sắc, điểm vượt trội hoặc bài học thực tế tốt...'
-                        : 'Lưu ý nguyên nhân hồ sơ bị lỗi kỹ thuật, tài chính hoặc lý do trễ hạn để tránh lặp lại...'
+                        ? 'Ghi chú kinh nghiệm hoàn thành tốt (ví dụ: làm trước tiến độ, phối hợp tốt, phương án tối ưu...)'
+                        : 'Lý do chưa đạt yêu cầu và phương án khắc phục chi tiết để sửa lỗi nhanh nhất...'
                     }
-                    className="w-full rounded-xl border border-gray-200 dark:border-slate-800 px-3 py-2 text-sm bg-white dark:bg-slate-950 text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder:text-gray-450 dark:placeholder:text-slate-600"
+                    className="w-full rounded-xl border border-gray-200 dark:border-slate-800 px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-950 text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                     value={remarks}
                     onChange={(e) => {
                       setRemarks(e.target.value);
@@ -757,32 +787,32 @@
                 </div>
 
                 {error && (
-                  <p className="text-xs text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950/20 px-3 py-2 rounded-lg border border-red-100 dark:border-red-950/30 flex items-center gap-1.5">
-                    <Icons.Alert />
+                  <p className="text-xs text-rose-600 dark:text-rose-450 bg-rose-50 dark:bg-rose-950/20 px-3.5 py-2.5 rounded-xl border border-rose-100 dark:border-rose-950/30 flex items-center gap-1.5 font-medium">
+                    <Icon name="AlertTriangle" className="w-4 h-4 shrink-0" />
                     <span>{error}</span>
                   </p>
                 )}
               </div>
 
-              <div className="flex justify-end gap-2 px-6 py-4 bg-gray-50 dark:bg-slate-950/40 border-t border-gray-100 dark:border-slate-800">
+              <div className="flex justify-end gap-2 px-6 py-4 bg-gray-50 dark:bg-slate-950/50 border-t border-gray-100 dark:border-slate-850">
                 <button
                   type="button"
                   id="cancel-modal-btn"
                   onClick={onClose}
-                  className="px-4 py-2 text-sm font-medium text-gray-650 dark:text-slate-300 bg-white dark:bg-slate-950 hover:bg-gray-100 dark:hover:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg transition duration-150 cursor-pointer"
+                  className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-slate-350 bg-white dark:bg-slate-950 hover:bg-gray-100 dark:hover:bg-slate-800 border border-gray-200 dark:border-slate-850 rounded-xl transition duration-150 cursor-pointer"
                 >
-                  Hủy bỏ
+                  Đóng
                 </button>
                 <button
                   type="button"
                   id="save-evaluation-btn"
                   onClick={handleSave}
-                  className={`px-5 py-2 text-sm font-semibold text-white rounded-lg transition duration-150 flex items-center gap-1.5 shadow-sm cursor-pointer ${
+                  className={`px-5 py-2 text-xs font-bold text-white rounded-xl transition duration-150 flex items-center gap-1.5 shadow-md hover:shadow-lg cursor-pointer ${
                     evaluation === 'Dat' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'
                   }`}
                 >
-                  <Icons.Check />
-                  <span>Xác nhận hoàn thành</span>
+                  <Icon name="Check" className="w-4 h-4" />
+                  <span>Xác Nhận Nghiệm Thu</span>
                 </button>
               </div>
             </div>
@@ -790,10 +820,10 @@
         );
       }
 
-      // ==========================================
-      // COMPONENT: DASHBOARD OVERVIEW
-      // ==========================================
-      function Dashboard({ projects, tasks, onSelectProjectFilter, onSelectTab }) {
+      // =========================================================
+      // 6. MAIN COMPONENT: DASHBOARD OVERVIEW & ANALYTICS
+      // =========================================================
+      function Dashboard({ projects, tasks, onResetData }) {
         const nowMs = Date.now();
 
         const totalProjects = projects.length;
@@ -852,332 +882,244 @@
           };
         });
 
-        // Filter out all remarks/lessons learned from projects for "Lessons Feed"
-        const allRemarks = useMemo(() => {
-          const list = [];
-          tasks.forEach(t => {
-            if (t.isCompleted && t.remarks && t.remarks.trim() !== '') {
-              const p = projects.find(proj => proj.id === t.projectId);
-              list.push({
-                taskId: t.id,
-                taskContent: t.content,
-                projectName: p ? p.name : 'Không rõ dự án',
-                evaluation: t.evaluation,
-                remarks: t.remarks,
-                completedAt: t.completedAt,
-              });
-            }
-          });
-          // Sort by latest completed
-          return list.sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
-        }, [tasks, projects]);
-
         return (
           <div className="space-y-6">
-            {/* Header dashboard & Quick export */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 p-5 rounded-2xl shadow-xs transition-colors duration-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 p-5 rounded-2xl shadow-sm transition-all duration-200">
               <div>
                 <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <span className="text-indigo-600 dark:text-indigo-400">
-                    <Icons.TrendingUp />
-                  </span>
-                  <span>Phân Tích Tiến Độ & Hiệu Suất KPI Gói Thầu</span>
+                  <Icon name="TrendingUp" className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  Đo Lường Hiệu Suất KPI & Đấu Thầu
                 </h2>
                 <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
-                  Đo lường tỷ lệ hoàn thành đúng tiến độ, chỉ số KPI thầu, đánh giá đạt kỹ thuật & tổng hợp kinh nghiệm thực tế.
+                  Đánh giá tỷ lệ hoàn thành đúng tiến độ nội bộ, thống kê tỷ lệ đạt kiểm tra của các phòng ban.
                 </p>
               </div>
-              <button
-                type="button"
-                id="dashboard-export-excel-btn"
-                onClick={() => exportTasksToCSV(projects, tasks)}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-650 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all duration-150 shrink-0 cursor-pointer active:translate-y-px"
-                title="Xuất báo cáo theo dõi ra file Excel (.csv)"
-              >
-                <Icons.FileDown />
-                <span>Xuất Báo Cáo Excel (CSV)</span>
-              </button>
+              
+              <div className="flex items-center gap-2.5 shrink-0">
+                <button
+                  type="button"
+                  id="dashboard-export-excel-btn"
+                  onClick={() => exportTasksToCSV(projects, tasks)}
+                  className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm hover:shadow-md transition-all duration-150 cursor-pointer active:translate-y-0.5"
+                  title="Xuất bảng dữ liệu ra file Excel (.csv)"
+                >
+                  <Icon name="FileDown" className="w-4 h-4" />
+                  <span>Xuất Báo Cáo Excel</span>
+                </button>
+                <button
+                  type="button"
+                  id="dashboard-reset-btn"
+                  onClick={onResetData}
+                  className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300 text-xs font-bold rounded-xl shadow-sm transition-all duration-150 cursor-pointer"
+                  title="Khôi phục lại dữ liệu mẫu"
+                >
+                  <Icon name="RefreshCw" className="w-4 h-4" />
+                  <span className="hidden sm:inline">Khôi phục gốc</span>
+                </button>
+              </div>
             </div>
 
-            {/* 4 Cards Stats */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 shadow-xs flex items-center gap-4 transition-colors duration-200">
-                <div className="p-3 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl">
-                  <Icons.Project />
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 shadow-xs flex items-center gap-4 transition-all duration-200">
+                <div className="p-3.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl">
+                  <Icon name="Folder" className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Tổng số gói thầu</p>
-                  <h4 className="text-2xl font-bold text-gray-800 dark:text-white mt-1">{totalProjects}</h4>
-                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-                    <span className="font-semibold text-indigo-650 dark:text-indigo-400">{activeProjectsCount}</span> đang triển khai
+                  <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Tổng Dự Án</p>
+                  <h4 className="text-2xl font-bold text-gray-800 dark:text-white mt-0.5">{totalProjects}</h4>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                    <span className="font-semibold text-indigo-600 dark:text-indigo-400">{activeProjectsCount}</span> dự án đang chạy
                   </p>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 shadow-xs flex items-center gap-4 transition-colors duration-200">
-                <div className="p-3 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 rounded-xl">
-                  <Icons.TaskList />
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 shadow-xs flex items-center gap-4 transition-all duration-200">
+                <div className="p-3.5 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 rounded-xl">
+                  <Icon name="Briefcase" className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Công việc đã tạo</p>
-                  <h4 className="text-2xl font-bold text-gray-800 dark:text-white mt-1">{totalTasksCreated}</h4>
-                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-                    Đang thực hiện: <span className="font-semibold text-sky-600 dark:text-sky-450">{totalTasksCreated - completedTasksCount}</span>
+                  <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Đã Giao Thầu</p>
+                  <h4 className="text-2xl font-bold text-gray-800 dark:text-white mt-0.5">{totalTasksCreated}</h4>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                    Đang làm: <span className="font-semibold text-sky-600 dark:text-sky-400">{totalTasksCreated - completedTasksCount}</span> việc
                   </p>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 shadow-xs flex items-center gap-4 transition-colors duration-200">
-                <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
-                  <Icons.Check />
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 shadow-xs flex items-center gap-4 transition-all duration-200">
+                <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                  <Icon name="CheckCircle2" className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Công việc hoàn thành</p>
-                  <h4 className="text-2xl font-bold text-gray-800 dark:text-white mt-1">{completedTasksCount}</h4>
-                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-                    Đúng hạn: <span className="font-semibold text-emerald-600 dark:text-emerald-450">{completedOnTimeCount}</span> / {completedTasksCount}
+                  <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Nghiệm Thu Xong</p>
+                  <h4 className="text-2xl font-bold text-gray-800 dark:text-white mt-0.5">{completedTasksCount}</h4>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                    Đúng hạn: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{completedOnTimeCount}</span> / {completedTasksCount}
                   </p>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 shadow-xs flex items-center gap-4 transition-colors duration-200">
-                <div className="p-3 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl">
-                  <Icons.Alert />
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 shadow-xs flex items-center gap-4 transition-all duration-200">
+                <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl">
+                  <Icon name="AlertTriangle" className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Quá hạn (Overdue)</p>
-                  <h4 className={`text-2xl font-bold mt-1 ${overdueTasksCount > 0 ? 'text-rose-600 animate-pulse' : 'text-gray-850 dark:text-white'}`}>
+                  <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Đang Trễ Hạn</p>
+                  <h4 className={`text-2xl font-extrabold mt-0.5 ${overdueTasksCount > 0 ? 'text-rose-600 animate-pulse' : 'text-gray-800 dark:text-white'}`}>
                     {overdueTasksCount}
                   </h4>
-                  <p className="text-xs text-gray-500 dark:text-slate-450 mt-0.5">Cần tập trung đẩy nhanh</p>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                    Cần giải quyết gấp!
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* Main Analytical Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              
-              {/* KPI gauge ring column */}
-              <div className="bg-gradient-to-br from-slate-900 to-indigo-950 rounded-2xl p-6 text-white shadow-md md:col-span-1 flex flex-col justify-between relative overflow-hidden">
-                <div className="absolute right-0 bottom-0 opacity-10 pointer-events-none">
-                  <Icons.Award />
+              <div className="bg-gradient-to-br from-indigo-950 to-slate-900 rounded-3xl p-6 text-white shadow-lg md:col-span-1 flex flex-col justify-between relative overflow-hidden">
+                <div className="absolute right-0 bottom-0 opacity-5 pointer-events-none">
+                  <Icon name="TrendingUp" className="w-48 h-48" />
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider bg-indigo-900/50 px-2.5 py-1 rounded-md">
-                      Chỉ số hiệu suất KPI
+                    <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider bg-indigo-900/50 px-2.5 py-1 rounded-md">
+                      Chỉ số tiến độ
                     </span>
-                    <Icons.Clock />
+                    <Icon name="CalendarCheck2" className="w-5 h-5 text-indigo-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-indigo-100 font-display">Tỷ Lệ Hoàn Thành Đúng Hạn</h3>
-                  <p className="text-xs text-indigo-300 mt-1">Đo lường năng lực đáp ứng tiến độ gói thầu.</p>
+                  <h3 className="text-lg font-bold text-white leading-tight">KPI Hoàn Thành Đúng Hạn</h3>
+                  <p className="text-xs text-indigo-300 mt-1">Đo lường tính kỷ luật tiến độ nội bộ</p>
                 </div>
 
-                {/* Animated SVG Gauge chart */}
                 <div className="my-6 flex items-center justify-center">
                   <div className="relative w-32 h-32">
                     <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                      <path
-                        className="text-white/10"
-                        strokeWidth="3.2"
-                        stroke="currentColor"
-                        fill="none"
-                        d="M18 2.0845
-                          a 15.9155 15.9155 0 0 1 0 31.831
-                          a 15.9155 15.9155 0 0 1 0 -31.831"
-                      />
-                      <path
-                        className="text-indigo-400 transition-all duration-1000 ease-out"
+                      <circle cx="18" cy="18" r="16" fill="none" stroke="#1e293b" strokeWidth="3" />
+                      <circle 
+                        cx="18" 
+                        cy="18" 
+                        r="16" 
+                        fill="none" 
+                        stroke="#6366f1" 
+                        strokeWidth="3.2" 
                         strokeDasharray={`${kpiRate}, 100`}
-                        strokeWidth="3.2"
                         strokeLinecap="round"
-                        stroke="currentColor"
-                        fill="none"
-                        d="M18 2.0845
-                          a 15.9155 15.9155 0 0 1 0 31.831
-                          a 15.9155 15.9155 0 0 1 0 -31.831"
+                        className="transition-all duration-1000 ease-out"
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-3xl font-extrabold text-white leading-none font-display">{kpiRate}%</span>
-                      <span className="text-[10px] text-indigo-200 font-bold mt-1.5 uppercase tracking-wider">KPI Đạt</span>
+                      <span className="text-2xl font-black text-white">{kpiRate}%</span>
+                      <span className="text-[9px] font-bold text-indigo-200 mt-0.5 tracking-wider uppercase">ĐÚNG HẠN</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="text-sm space-y-1 bg-white/5 p-3 rounded-xl border border-white/10">
-                  <div className="flex items-center justify-between text-xs text-indigo-200">
+                <div className="space-y-2 text-xs border-t border-slate-800 pt-4">
+                  <div className="flex items-center justify-between text-slate-300">
                     <span className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
-                      <span>Xong đúng hạn:</span>
+                      <span className="w-2.5 h-2.5 bg-indigo-500 rounded-full"></span>
+                      Xong đúng hạn:
                     </span>
                     <strong className="text-white">{completedOnTimeCount} việc</strong>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-indigo-200 mt-1">
+                  <div className="flex items-center justify-between text-slate-300">
                     <span className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 bg-indigo-400 rounded-full"></span>
-                      <span>Tổng đã hoàn thành:</span>
+                      <span className="w-2.5 h-2.5 bg-slate-700 rounded-full"></span>
+                      Tổng số hoàn thành:
                     </span>
                     <strong className="text-white">{completedTasksCount} việc</strong>
                   </div>
                 </div>
 
-                <div className="border-t border-indigo-900/60 pt-3 mt-4">
-                  <p className="text-xs text-indigo-200 italic">
-                    {kpiRate >= 80 
-                      ? 'Xuất sắc! Tiến độ phối hợp và lập hồ sơ thầu cực kỳ chuẩn xác.' 
-                      : kpiRate >= 50 
-                      ? 'Khá tốt! Hãy chú ý kiểm soát chặt chẽ các mốc bàn giao trung gian.' 
-                      : completedTasksCount === 0 
-                      ? 'Chưa có dữ liệu đánh giá tiến độ thực tế.' 
-                      : 'Cảnh báo! Tỷ lệ trễ hạn cao. Cần rút ngắn quy trình lập và duyệt hồ sơ.'}
-                  </p>
+                <div className="mt-4 text-xs text-indigo-300 bg-indigo-900/20 p-3 rounded-xl border border-indigo-900/30">
+                  {kpiRate >= 80 
+                    ? 'Xuất sắc! Đội ngũ đang phối hợp triển khai vô cùng chuyên nghiệp.' 
+                    : kpiRate >= 50 
+                    ? 'Khá tốt! Hãy chú ý kiểm tra sát sao hơn các hạng mục chuẩn bị trễ hạn.' 
+                    : completedTasksCount === 0 
+                    ? 'Chưa có dữ liệu hoàn thành nào để xếp hạng chỉ số KPI.' 
+                    : 'Cảnh báo! Chỉ số đúng hạn ở mức thấp, cần rà soát lại nhân lực & quy trình thầu.'}
                 </div>
               </div>
 
-              {/* Progress by project column */}
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 shadow-sm md:col-span-2 transition-colors duration-200 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between mb-4 border-b border-gray-50 dark:border-slate-800 pb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-indigo-650 dark:text-indigo-400">
-                        <Icons.Dashboard />
-                      </span>
-                      <h3 className="font-semibold text-gray-800 dark:text-white">Hiệu Suất Kỹ Thuật Gói Thầu</h3>
-                    </div>
-                    <span className="text-xs text-gray-400 dark:text-slate-500 font-medium">Tỷ lệ Đạt yêu cầu</span>
+              <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-slate-800 p-6 shadow-sm md:col-span-2 transition-all duration-200">
+                <div className="flex items-center justify-between mb-4 border-b border-gray-100 dark:border-slate-850 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Icon name="FileCheck2" className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    <h3 className="font-bold text-gray-800 dark:text-white">Chi Tiết Hiệu Suất KPI Theo Dự Án</h3>
                   </div>
+                  <span className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Tỷ lệ đạt chuẩn</span>
+                </div>
 
-                  <div className="space-y-4 max-h-[340px] overflow-y-auto pr-1">
-                    {projectStats.map(p => {
-                      const totalProjTasks = p.activeCount + p.completedCount;
-                      return (
-                        <div key={p.id} className="bg-gray-50/50 dark:bg-slate-950/40 rounded-xl p-3.5 border border-gray-100/50 dark:border-slate-800/60 space-y-2">
-                          <div className="flex items-start justify-between gap-4 text-sm">
-                            <span 
-                              onClick={() => {
-                                onSelectProjectFilter(p.id);
-                                onSelectTab('tasks');
-                              }}
-                              className="font-bold text-gray-800 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer transition duration-150 text-xs sm:text-sm line-clamp-2" 
-                              title="Bấm để xem danh sách công việc dự án này"
-                            >
-                              {p.name}
-                            </span>
-                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md border shrink-0 ${
-                              p.passRate >= 80 
-                                ? 'bg-emerald-50 dark:bg-emerald-950/35 border-emerald-100 text-emerald-700'
-                                : p.passRate >= 55
-                                ? 'bg-indigo-50 dark:bg-indigo-950/35 border-indigo-100 text-indigo-700'
-                                : 'bg-rose-50 dark:bg-rose-950/35 border-rose-100 text-rose-700'
-                            }`}>
-                              Đạt: {p.passRate}%
-                            </span>
-                          </div>
-                          
-                          <div className="h-2 w-full bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                            <div 
-                              className={`h-full rounded-full transition-all duration-500 ${
-                                p.passRate >= 80 
-                                  ? 'bg-emerald-500' 
-                                  : p.passRate >= 55 
-                                  ? 'bg-indigo-500' 
-                                  : 'bg-rose-500'
-                              }`}
-                              style={{ width: `${p.passRate}%` }}
-                            ></div>
-                          </div>
-
-                          <div className="flex justify-between items-center text-xs text-gray-400 dark:text-slate-500">
-                            <span>
-                              Thực hiện: <strong>{p.activeCount}</strong> đang chạy / <strong>{p.completedCount}</strong> đã duyệt
-                            </span>
-                            <span>Tổng số mốc: {totalProjTasks}</span>
-                          </div>
+                <div className="space-y-4 max-h-[460px] overflow-y-auto pr-1">
+                  {projectStats.map(p => {
+                    const totalProjTasks = p.activeCount + p.completedCount;
+                    return (
+                      <div key={p.id} className="bg-slate-50/50 dark:bg-slate-950/40 rounded-2xl p-4 border border-gray-100 dark:border-slate-800/80 space-y-3">
+                        <div className="flex items-start justify-between gap-4">
+                          <span className="font-bold text-sm text-gray-800 dark:text-slate-200 leading-tight">
+                            {p.name}
+                          </span>
+                          <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-1 rounded-lg shrink-0 border border-indigo-100/40 dark:border-indigo-900/20">
+                            Chất lượng Đạt: {p.passRate}%
+                          </span>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                        
+                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              p.passRate >= 80 
+                                ? 'bg-emerald-500' 
+                                : p.passRate >= 50 
+                                ? 'bg-indigo-500' 
+                                : 'bg-rose-500'
+                            }`}
+                            style={{ width: `${p.passRate}%` }}
+                          ></div>
+                        </div>
 
-                <div className="border-t border-gray-50 dark:border-slate-800 pt-4 mt-4 flex justify-between items-center">
-                  <span className="text-xs text-gray-450 dark:text-slate-500">Bấm tên dự án để chuyển đến quản lý mốc thầu.</span>
-                  <button 
-                    onClick={() => onSelectTab('projects')}
-                    className="text-xs font-bold text-indigo-600 dark:text-indigo-450 hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>Quản lý gói thầu</span>
-                    <Icons.ChevronRight />
-                  </button>
-                </div>
+                        <div className="flex justify-between items-center text-[11px] text-gray-400 dark:text-slate-500">
+                          <span>
+                            Trạng thái: <strong className="text-sky-600 dark:text-sky-400">{p.activeCount} việc đang chạy</strong> / <strong className="text-emerald-600 dark:text-emerald-400">{p.completedCount} đã xong</strong>
+                          </span>
+                          <span>Tổng: {totalProjTasks} hạng mục</span>
+                        </div>
 
+                        {p.remarksList.length > 0 && (
+                          <div className="mt-3 bg-white dark:bg-slate-900 p-3 rounded-xl border border-gray-100 dark:border-slate-850 space-y-1.5">
+                            <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider block">Bài học kinh nghiệm / Nhật ký khắc phục:</span>
+                            <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                              {p.remarksList.map((item, idx) => (
+                                <div key={idx} className="text-xs border-l-2 border-indigo-500 dark:border-indigo-400 pl-2 py-0.5 space-y-0.5">
+                                  <div className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-slate-500 font-medium">
+                                    <span>Giao thầu: "{item.content.substring(0, 50)}..."</span>
+                                    <span>•</span>
+                                    <span className={item.evaluation === 'Dat' ? 'text-emerald-600 font-bold' : 'text-rose-600 font-bold'}>
+                                      {item.evaluation === 'Dat' ? 'Đạt' : 'Chưa đạt'}
+                                    </span>
+                                  </div>
+                                  <p className="text-gray-600 dark:text-slate-300 italic font-medium">
+                                    "{item.remarks}"
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-
-            {/* Corner of Lessons Learned Feed */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 shadow-sm transition-colors duration-200">
-              <div className="flex items-center justify-between mb-4 border-b border-gray-50 dark:border-slate-800 pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-indigo-650 dark:text-indigo-400">
-                    <Icons.Award />
-                  </span>
-                  <h3 className="font-semibold text-gray-800 dark:text-white">Nhật Ký Đấu Thầu & Bài Học Kinh Nghiệm</h3>
-                </div>
-                <span className="text-xs bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 font-bold px-2.5 py-1 rounded-md border border-indigo-100/50">
-                  {allRemarks.length} bài học thực tế
-                </span>
-              </div>
-
-              {allRemarks.length === 0 ? (
-                <div className="text-center py-8 text-gray-400 dark:text-slate-500 text-sm italic">
-                  Chưa ghi nhận bài học kinh nghiệm nào. Các nhận xét sẽ tự động xuất hiện sau khi bạn hoàn thành và đánh giá các mốc công việc thầu.
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[400px] overflow-y-auto pr-1">
-                  {allRemarks.map((rem, i) => (
-                    <div 
-                      key={rem.taskId + i} 
-                      className={`rounded-xl p-4 border transition duration-150 ${
-                        rem.evaluation === 'Dat'
-                          ? 'bg-emerald-50/20 dark:bg-emerald-950/10 border-emerald-100/40 dark:border-emerald-900/15'
-                          : 'bg-rose-50/20 dark:bg-rose-950/10 border-rose-100/40 dark:border-rose-900/15'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-3 text-xs mb-2 border-b border-gray-100 dark:border-slate-800/50 pb-1.5">
-                        <span className="font-bold text-gray-400 dark:text-slate-500 truncate max-w-[200px]" title={rem.projectName}>
-                          {rem.projectName}
-                        </span>
-                        <span className={`font-semibold shrink-0 ${rem.evaluation === 'Dat' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                          {rem.evaluation === 'Dat' ? '✓ Đạt kỹ thuật' : '✗ Cần khắc phục'}
-                        </span>
-                      </div>
-                      
-                      <p className="text-xs font-bold text-gray-800 dark:text-slate-200 mb-1.5 line-clamp-2 italic">
-                        "{rem.taskContent}"
-                      </p>
-                      
-                      <div className="text-xs text-gray-650 dark:text-slate-350 bg-white/60 dark:bg-slate-950/40 p-2.5 rounded-lg border border-gray-100/40 dark:border-slate-850">
-                        <strong className="text-[10px] uppercase font-bold text-indigo-650 dark:text-indigo-400 block mb-1">Rút kinh nghiệm:</strong>
-                        <p className="leading-relaxed whitespace-pre-wrap">{rem.remarks}</p>
-                      </div>
-
-                      <div className="text-[10px] text-gray-405 dark:text-slate-500 text-right mt-2 font-mono">
-                        Duyệt ngày: {formatReadableDateTime(rem.completedAt)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
           </div>
         );
       }
 
-      // ==========================================
-      // MAIN APP CONTROLLER
-      // ==========================================
+      // =========================================================
+      // 7. MAIN APP WRAPPER (State management & Views router)
+      // =========================================================
       function App() {
         const [projects, setProjects] = useState([]);
         const [tasks, setTasks] = useState([]);
@@ -1197,26 +1139,38 @@
         }, [isDarkMode]);
         
         const [currentTab, setCurrentTab] = useState('dashboard');
+        
+        // Task Filtering/Search States
+        const [selectedFilterProjectId, setSelectedFilterProjectId] = useState('all');
         const [statusFilter, setStatusFilter] = useState('all');
-        const [projectFilter, setProjectFilter] = useState('all');
         const [searchQuery, setSearchQuery] = useState('');
 
+        // Loading and Initialization
         useEffect(() => {
           const storedProjects = safeStorage.getItem('pms_projects');
           const storedTasks = safeStorage.getItem('pms_tasks');
 
           if (storedProjects && storedTasks) {
-            setProjects(JSON.parse(storedProjects));
-            setTasks(JSON.parse(storedTasks));
+            try {
+              setProjects(JSON.parse(storedProjects));
+              setTasks(JSON.parse(storedTasks));
+            } catch (e) {
+              console.error("Error parsing stored data", e);
+              loadDefaultMockData();
+            }
           } else {
-            const mockProj = getMockProjects();
-            const mockTasks = getMockTasks();
-            setProjects(mockProj);
-            setTasks(mockTasks);
-            safeStorage.setItem('pms_projects', JSON.stringify(mockProj));
-            safeStorage.setItem('pms_tasks', JSON.stringify(mockTasks));
+            loadDefaultMockData();
           }
         }, []);
+
+        const loadDefaultMockData = () => {
+          const mockProj = getMockProjects();
+          const mockTasks = getMockTasks();
+          setProjects(mockProj);
+          setTasks(mockTasks);
+          safeStorage.setItem('pms_projects', JSON.stringify(mockProj));
+          safeStorage.setItem('pms_tasks', JSON.stringify(mockTasks));
+        };
 
         const saveProjects = (updatedProjects) => {
           setProjects(updatedProjects);
@@ -1232,19 +1186,11 @@
           const newProject = {
             id: `proj-${Date.now()}`,
             name: projectName,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
           };
-          const updated = [...projects, newProject];
+          const updated = [newProject, ...projects];
           saveProjects(updated);
           return newProject.id;
-        };
-
-        const handleAddProjectDirect = (e) => {
-          e.preventDefault();
-          const input = document.getElementById('direct-project-name');
-          if (!input || !input.value.trim()) return;
-          handleAddProject(input.value.trim());
-          input.value = '';
         };
 
         const handleAddTask = (taskData) => {
@@ -1252,723 +1198,444 @@
             id: `task-${Date.now()}`,
             projectId: taskData.projectId,
             content: taskData.content,
-            startTime: taskData.startTime,
-            planEndTime: taskData.planEndTime,
+            startTime: new Date(taskData.startTime).toISOString(),
+            planEndTime: new Date(taskData.planEndTime).toISOString(),
             isCompleted: false,
           };
-          const updated = [...tasks, newTask];
+          const updated = [newTask, ...tasks];
           saveTasks(updated);
         };
 
-        // Modal State for Task Evaluation
-        const [evalModalOpen, setEvalModalOpen] = useState(false);
-        const [taskToEval, setTaskToEval] = useState(null);
+        // Complete & Evaluation Modal triggers
+        const [evaluatingTask, setEvaluatingTask] = useState(null);
 
-        const handleToggleTaskStatus = (taskId) => {
-          const task = tasks.find((t) => t.id === taskId);
-          if (!task) return;
-
-          if (!task.isCompleted) {
-            // Opening evaluation modal on checking completed
-            setTaskToEval(task);
-            setEvalModalOpen(true);
-          } else {
-            // Mark incomplete directly
-            const updated = tasks.map((t) => {
-              if (t.id === taskId) {
-                const { completedAt, evaluation, remarks, ...rest } = t;
-                return { ...rest, isCompleted: false };
-              }
-              return t;
-            });
-            saveTasks(updated);
-          }
+        const handleCompleteClick = (task) => {
+          setEvaluatingTask(task);
         };
 
-        const handleSaveTaskEvaluation = (evaluation, remarks) => {
-          if (!taskToEval) return;
-          const updated = tasks.map((t) => {
-            if (t.id === taskToEval.id) {
+        const handleEvaluationSubmit = (evaluation, remarks) => {
+          if (!evaluatingTask) return;
+
+          const updatedTasks = tasks.map((t) => {
+            if (t.id === evaluatingTask.id) {
               return {
                 ...t,
                 isCompleted: true,
                 completedAt: new Date().toISOString(),
                 evaluation,
-                remarks
+                remarks,
               };
             }
             return t;
           });
-          saveTasks(updated);
-          setEvalModalOpen(false);
-          setTaskToEval(null);
+
+          saveTasks(updatedTasks);
+          setEvaluatingTask(null);
         };
 
         const handleDeleteTask = (taskId) => {
-          if (window.confirm('Bạn có chắc chắn muốn xóa mốc công việc này không?')) {
+          if (window.confirm('Bạn có chắc chắn muốn xóa công việc này không? Dữ liệu đã xóa không thể phục hồi.')) {
             const updated = tasks.filter((t) => t.id !== taskId);
             saveTasks(updated);
           }
         };
 
         const handleResetData = () => {
-          if (window.confirm('Hành động này sẽ khôi phục lại dữ liệu mẫu gồm 3 Gói thầu và 6 Mốc công việc chính thức. Các thay đổi hiện tại của bạn sẽ bị ghi đè. Bạn có muốn tiếp tục không?')) {
-            const mockProj = getMockProjects();
-            const mockTasks = getMockTasks();
-            saveProjects(mockProj);
-            saveTasks(mockTasks);
+          if (window.confirm('Hành động này sẽ khôi phục lại dữ liệu mẫu gốc ban đầu. Các dự án và hạng mục tự thêm của bạn sẽ bị ghi đè. Bạn có muốn tiếp tục không?')) {
+            loadDefaultMockData();
           }
         };
 
-        const handleDeleteProject = (projectId) => {
-          const projTasks = tasks.filter(t => t.projectId === projectId);
-          let confirmMsg = 'Bạn có chắc chắn muốn xóa Gói thầu này không?';
-          if (projTasks.length > 0) {
-            confirmMsg = `Cảnh báo! Gói thầu này đang chứa ${projTasks.length} mốc công việc thực hiện. Việc xóa gói thầu sẽ xóa toàn bộ các công việc đi kèm. Bạn vẫn muốn tiếp tục chứ?`;
-          }
-          if (window.confirm(confirmMsg)) {
-            const updatedProjects = projects.filter(p => p.id !== projectId);
-            const updatedTasks = tasks.filter(t => t.projectId !== projectId);
-            saveProjects(updatedProjects);
-            saveTasks(updatedTasks);
-          }
-        };
-
-        // Real-time ticking remaining calculation
-        const [currentTimeTick, setCurrentTimeTick] = useState(Date.now());
+        // Real-time ticking remaining calculation helper
+        const [timeTrigger, setTimeTrigger] = useState(0);
         useEffect(() => {
           const timer = setInterval(() => {
-            setCurrentTimeTick(Date.now());
-          }, 10000); // refresh time every 10 seconds
+            setTimeTrigger(prev => prev + 1);
+          }, 60000); // refresh time relative strings every 1m
           return () => clearInterval(timer);
         }, []);
 
-        // Inline Task Editing Mode
-        const [editingTaskId, setEditingTaskId] = useState(null);
-        const [editContent, setEditContent] = useState('');
-        const [editStartTime, setEditStartTime] = useState('');
-        const [editPlanEndTime, setEditPlanEndTime] = useState('');
-        const [editProjectId, setEditProjectId] = useState('');
-
-        const startEditTask = (task) => {
-          setEditingTaskId(task.id);
-          setEditContent(task.content);
-          setEditStartTime(formatDateTimeLocal(new Date(task.startTime)));
-          setEditPlanEndTime(formatDateTimeLocal(new Date(task.planEndTime)));
-          setEditProjectId(task.projectId);
-        };
-
-        const handleSaveTaskEdit = (taskId) => {
-          if (!editContent.trim()) {
-            alert('Vui lòng nhập nội dung công việc!');
-            return;
-          }
-          const updated = tasks.map(t => {
-            if (t.id === taskId) {
-              return {
-                ...t,
-                projectId: editProjectId,
-                content: editContent.trim(),
-                startTime: new Date(editStartTime).toISOString(),
-                planEndTime: new Date(editPlanEndTime).toISOString(),
-              };
-            }
-            return t;
-          });
-          saveTasks(updated);
-          setEditingTaskId(null);
-        };
-
-        // Filtering Logic
+        // Filter and Search logic
         const filteredTasks = useMemo(() => {
-          return tasks.filter((task) => {
-            // Filter by search query
-            const matchesSearch = task.content.toLowerCase().includes(searchQuery.toLowerCase());
+          return tasks.filter(t => {
+            const matchesProject = selectedFilterProjectId === 'all' || t.projectId === selectedFilterProjectId;
             
-            // Filter by project
-            const matchesProject = projectFilter === 'all' || task.projectId === projectFilter;
-
-            // Filter by status
             let matchesStatus = true;
-            if (statusFilter === 'pending') {
-              matchesStatus = !task.isCompleted;
-            } else if (statusFilter === 'completed') {
-              matchesStatus = task.isCompleted;
+            const isOverdue = !t.isCompleted && new Date(t.planEndTime).getTime() < Date.now();
+            
+            if (statusFilter === 'completed') {
+              matchesStatus = t.isCompleted;
+            } else if (statusFilter === 'active') {
+              matchesStatus = !t.isCompleted && !isOverdue;
             } else if (statusFilter === 'overdue') {
-              const isOverdue = !task.isCompleted && new Date(task.planEndTime).getTime() < currentTimeTick;
               matchesStatus = isOverdue;
             }
 
-            return matchesSearch && matchesProject && matchesStatus;
+            const matchesKeyword = t.content.toLowerCase().includes(searchQuery.toLowerCase());
+
+            return matchesProject && matchesStatus && matchesKeyword;
           });
-        }, [tasks, searchQuery, projectFilter, statusFilter, currentTimeTick]);
+        }, [tasks, selectedFilterProjectId, statusFilter, searchQuery, timeTrigger]);
 
         return (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            
-            {/* Nav Header */}
-            <header className="flex flex-col sm:flex-row items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-5 mb-6 gap-4">
-              <div className="flex items-center gap-3">
-                <div className="bg-indigo-600 text-white p-2.5 rounded-2xl shadow-sm">
-                  <Icons.Award />
-                </div>
-                <div>
-                  <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white font-display tracking-tight uppercase">
-                    TENDER KPI <span className="text-indigo-600 dark:text-indigo-400 font-medium font-sans text-sm sm:text-base capitalize ml-1">Tracker</span>
-                  </h1>
-                  <p className="text-xs text-gray-500 dark:text-slate-400 font-medium">Báo Cáo Tiến Độ & Hiệu Suất Đấu Thầu Chuyên Nghiệp</p>
-                </div>
-              </div>
+          <div className="flex flex-col min-h-screen">
+            {/* Header section */}
+            <header className="bg-white dark:bg-slate-900 border-b border-gray-150 dark:border-slate-800 sticky top-0 z-40 shadow-sm transition-all duration-200">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex items-center justify-between h-16 sm:h-20">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-indigo-600 text-white rounded-2xl shadow-md shadow-indigo-500/10">
+                      <Icon name="Briefcase" className="w-5 h-5 sm:w-6 sm:h-6" />
+                    </div>
+                    <div>
+                      <h1 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white font-display tracking-tight leading-none">
+                        QUẢN LÝ TIẾN ĐỘ & HIỆU SUẤT KPI
+                      </h1>
+                      <p className="text-[10px] sm:text-xs text-gray-500 dark:text-slate-400 mt-1 sm:mt-1.5 hidden sm:block font-medium">
+                        Hệ thống tự động theo dõi tiến độ thầu thầu, cảnh báo trễ hạn & nghiệm thu chất lượng
+                      </p>
+                      <p className="text-[9px] text-indigo-600 dark:text-indigo-400 sm:hidden mt-0.5 font-bold">
+                        Hệ thống quản trị tiến độ thầu
+                      </p>
+                    </div>
+                  </div>
 
-              <div className="flex items-center gap-2">
-                {/* Dark mode switch */}
-                <button
-                  type="button"
-                  id="theme-toggle-btn"
-                  onClick={() => setIsDarkMode(!isDarkMode)}
-                  className="p-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-850 transition duration-150 cursor-pointer"
-                  title={isDarkMode ? "Chuyển sang Giao diện Sáng" : "Chuyển sang Giao diện Tối"}
-                >
-                  {isDarkMode ? <Icons.Sun /> : <Icons.Moon />}
-                </button>
-
-                {/* Reset system data */}
-                <button
-                  type="button"
-                  id="reset-data-btn"
-                  onClick={handleResetData}
-                  className="flex items-center gap-1.5 px-3 py-2.5 text-xs text-gray-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-450 border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl hover:bg-rose-50/40 dark:hover:bg-rose-950/20 transition duration-150 cursor-pointer"
-                  title="Khôi phục lại dữ liệu mẫu gốc ban đầu"
-                >
-                  <Icons.Reset />
-                  <span className="font-semibold hidden sm:inline">Khôi phục gốc</span>
-                </button>
-              </div>
-            </header>
-
-            {/* Menu Tabs Navigation */}
-            <div className="flex border-b border-gray-100 dark:border-slate-800 pb-px mb-6 overflow-x-auto gap-2">
-              <button
-                id="tab-btn-dashboard"
-                onClick={() => setCurrentTab('dashboard')}
-                className={`flex items-center gap-2 px-5 py-3 border-b-2 font-semibold text-xs sm:text-sm transition duration-150 shrink-0 cursor-pointer ${
-                  currentTab === 'dashboard'
-                    ? 'border-indigo-600 text-indigo-650 dark:border-indigo-400 dark:text-indigo-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200'
-                }`}
-              >
-                <Icons.Dashboard />
-                <span>Bảng điều khiển phân tích</span>
-              </button>
-
-              <button
-                id="tab-btn-tasks"
-                onClick={() => setCurrentTab('tasks')}
-                className={`flex items-center gap-2 px-5 py-3 border-b-2 font-semibold text-xs sm:text-sm transition duration-150 shrink-0 cursor-pointer ${
-                  currentTab === 'tasks'
-                    ? 'border-indigo-600 text-indigo-650 dark:border-indigo-400 dark:text-indigo-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200'
-                }`}
-              >
-                <Icons.TaskList />
-                <span>Mốc công việc triển khai thầu</span>
-                <span className="bg-gray-100 dark:bg-slate-850 px-1.5 py-0.5 rounded-full text-[10px] font-bold text-gray-600 dark:text-slate-350">
-                  {tasks.length}
-                </span>
-              </button>
-
-              <button
-                id="tab-btn-projects"
-                onClick={() => setCurrentTab('projects')}
-                className={`flex items-center gap-2 px-5 py-3 border-b-2 font-semibold text-xs sm:text-sm transition duration-150 shrink-0 cursor-pointer ${
-                  currentTab === 'projects'
-                    ? 'border-indigo-600 text-indigo-650 dark:border-indigo-400 dark:text-indigo-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200'
-                }`}
-              >
-                <Icons.Project />
-                <span>Quản lý gói thầu</span>
-                <span className="bg-gray-100 dark:bg-slate-850 px-1.5 py-0.5 rounded-full text-[10px] font-bold text-gray-600 dark:text-slate-350">
-                  {projects.length}
-                </span>
-              </button>
-            </div>
-
-            {/* TAB CONTENT: DASHBOARD */}
-            {currentTab === 'dashboard' && (
-              <Dashboard 
-                projects={projects} 
-                tasks={tasks} 
-                onSelectProjectFilter={(projId) => setProjectFilter(projId)}
-                onSelectTab={(tabName) => setCurrentTab(tabName)}
-              />
-            )}
-
-            {/* TAB CONTENT: TASKS */}
-            {currentTab === 'tasks' && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                
-                {/* Left Form Panel */}
-                <div className="lg:col-span-1 space-y-6">
-                  <TaskForm 
-                    projects={projects} 
-                    onAddTask={handleAddTask} 
-                    onAddProject={handleAddProject} 
-                  />
-
-                  {/* Quick Export excel info */}
-                  <div className="bg-gradient-to-br from-emerald-950 to-slate-900 border border-emerald-900/30 p-5 rounded-2xl text-white">
-                    <h4 className="text-sm font-bold text-emerald-400 flex items-center gap-2">
-                      <Icons.FileDown />
-                      <span>Trích xuất Dữ liệu Kế hoạch</span>
-                    </h4>
-                    <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
-                      Xuất toàn bộ lịch sử đấu thầu, kết quả chấm kỹ thuật, tài chính, mốc hoàn thành và báo cáo hiệu suất của tất cả các gói thầu thầu ra định dạng bảng Excel chuyên nghiệp để làm việc ngoại tuyến.
-                    </p>
+                  <div className="flex items-center gap-2.5">
+                    {/* Theme switcher */}
                     <button
                       type="button"
-                      id="sidebar-export-excel-btn"
-                      onClick={() => exportTasksToCSV(projects, tasks)}
-                      className="mt-4 w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 px-3 rounded-xl transition duration-150 cursor-pointer active:translate-y-px"
+                      id="theme-toggle-btn"
+                      onClick={() => setIsDarkMode(!isDarkMode)}
+                      className="p-2.5 bg-slate-50 dark:bg-slate-800 text-gray-500 dark:text-slate-350 hover:bg-slate-100 dark:hover:bg-slate-750 rounded-xl transition duration-150 border border-gray-100 dark:border-slate-800"
+                      title={isDarkMode ? 'Chuyển sang Giao diện Sáng' : 'Chuyển sang Giao diện Tối'}
                     >
-                      <Icons.FileDown />
-                      <span>Xuất File Báo Cáo excel</span>
+                      <Icon name={isDarkMode ? 'Sun' : 'Moon'} className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
-
-                {/* Right Tasks List & Filters Panel */}
-                <div className="lg:col-span-2 space-y-4">
-                  
-                  {/* Real-time search and dropdown filters */}
-                  <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 p-4 rounded-2xl shadow-xs transition-colors duration-200">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      
-                      {/* Search bar */}
-                      <div className="relative sm:col-span-1">
-                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                          <Icons.Search />
-                        </span>
-                        <input
-                          type="text"
-                          id="search-task-input"
-                          placeholder="Tìm nội dung mốc thầu..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-slate-800 text-xs sm:text-sm bg-white dark:bg-slate-950 text-gray-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                        />
-                      </div>
-
-                      {/* Dropdown Project thầu */}
-                      <div className="sm:col-span-1">
-                        <select
-                          id="filter-project-select"
-                          value={projectFilter}
-                          onChange={(e) => setProjectFilter(e.target.value)}
-                          className="w-full rounded-lg border border-gray-200 dark:border-slate-800 py-2 px-3 text-xs sm:text-sm bg-white dark:bg-slate-950 text-gray-800 dark:text-slate-100 focus:outline-none focus:border-indigo-550"
-                        >
-                          <option value="all" className="dark:bg-slate-950">-- Xem Tất cả gói thầu thầu --</option>
-                          {projects.map(p => (
-                            <option key={p.id} value={p.id} className="dark:bg-slate-950">{p.name}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Filter by status state tabs */}
-                      <div className="flex bg-gray-55/70 dark:bg-slate-950 border border-gray-150/40 dark:border-slate-800/80 p-1 rounded-lg gap-1 sm:col-span-1">
-                        <button
-                          onClick={() => setStatusFilter('all')}
-                          className={`flex-1 text-center py-1 rounded-md text-[11px] font-bold transition duration-150 cursor-pointer ${
-                            statusFilter === 'all'
-                              ? 'bg-indigo-600 text-white shadow-xs'
-                              : 'text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200'
-                          }`}
-                        >
-                          Tất cả
-                        </button>
-                        <button
-                          onClick={() => setStatusFilter('pending')}
-                          className={`flex-1 text-center py-1 rounded-md text-[11px] font-bold transition duration-150 cursor-pointer ${
-                            statusFilter === 'pending'
-                              ? 'bg-indigo-600 text-white shadow-xs'
-                              : 'text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200'
-                          }`}
-                        >
-                          Đang chạy
-                        </button>
-                        <button
-                          onClick={() => setStatusFilter('completed')}
-                          className={`flex-1 text-center py-1 rounded-md text-[11px] font-bold transition duration-150 cursor-pointer ${
-                            statusFilter === 'completed'
-                              ? 'bg-indigo-600 text-white shadow-xs'
-                              : 'text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200'
-                          }`}
-                        >
-                          Đã duyệt
-                        </button>
-                        <button
-                          onClick={() => setStatusFilter('overdue')}
-                          className={`flex-1 text-center py-1 rounded-md text-[11px] font-bold transition duration-150 cursor-pointer ${
-                            statusFilter === 'overdue'
-                              ? 'bg-rose-600 text-white shadow-xs'
-                              : 'text-gray-500 hover:text-gray-700 dark:text-slate-405 dark:hover:text-slate-200'
-                          }`}
-                        >
-                          Trễ hạn
-                        </button>
-                      </div>
-
-                    </div>
-                  </div>
-
-                  {/* Tasks Cards List rendering */}
-                  {filteredTasks.length === 0 ? (
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-12 text-center transition-colors duration-200">
-                      <p className="text-gray-400 dark:text-slate-500 text-sm italic">
-                        Không tìm thấy mốc công việc nào phù hợp với bộ lọc tìm kiếm hiện tại của bạn.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {filteredTasks.map((task) => {
-                        const project = projects.find((p) => p.id === task.projectId);
-                        const isOverdue = !task.isCompleted && new Date(task.planEndTime).getTime() < currentTimeTick;
-                        const remaining = getRemainingTimeText(task.planEndTime);
-
-                        const isEditingThis = editingTaskId === task.id;
-
-                        return (
-                          <div
-                            key={task.id}
-                            className={`bg-white dark:bg-slate-900 border rounded-2xl p-5 shadow-xs transition-all duration-200 ${
-                              task.isCompleted
-                                ? 'border-emerald-100/60 dark:border-emerald-950/20 bg-emerald-50/10 dark:bg-emerald-950/5'
-                                : isOverdue
-                                ? 'border-rose-200 dark:border-rose-950/30 bg-rose-50/5 dark:bg-rose-950/5'
-                                : 'border-gray-100 dark:border-slate-800 hover:border-gray-200 dark:hover:border-slate-700'
-                            }`}
-                          >
-                            {isEditingThis ? (
-                              /* Inline Editing Mode Block */
-                              <div className="space-y-3">
-                                <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-2">
-                                  <span className="text-xs font-bold text-indigo-650 dark:text-indigo-400 uppercase tracking-wider">Chỉnh sửa mốc thầu</span>
-                                  <button onClick={() => setEditingTaskId(null)} className="text-gray-400 hover:text-gray-600 text-xs cursor-pointer">Hủy</button>
-                                </div>
-                                <div>
-                                  <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">Gói thầu / Dự án thầu</label>
-                                  <select
-                                    value={editProjectId}
-                                    onChange={(e) => setEditProjectId(e.target.value)}
-                                    className="w-full text-xs rounded-md border border-gray-200 dark:border-slate-800 p-2 bg-white dark:bg-slate-950 text-gray-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
-                                  >
-                                    {projects.map(p => (
-                                      <option key={p.id} value={p.id}>{p.name}</option>
-                                    ))}
-                                  </select>
-                                </div>
-                                <div>
-                                  <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">Nội dung thực hiện</label>
-                                  <textarea
-                                    rows={2}
-                                    value={editContent}
-                                    onChange={(e) => setEditContent(e.target.value)}
-                                    className="w-full text-xs rounded-md border border-gray-200 dark:border-slate-800 p-2 bg-white dark:bg-slate-950 text-gray-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
-                                  />
-                                </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                  <div>
-                                    <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">Thời gian bắt đầu</label>
-                                    <input
-                                      type="datetime-local"
-                                      value={editStartTime}
-                                      onChange={(e) => setEditStartTime(e.target.value)}
-                                      className="w-full text-xs rounded-md border border-gray-200 dark:border-slate-800 p-2 bg-white dark:bg-slate-950 text-gray-700 dark:text-slate-200"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">Thời hạn kế hoạch</label>
-                                    <input
-                                      type="datetime-local"
-                                      value={editPlanEndTime}
-                                      onChange={(e) => setEditPlanEndTime(e.target.value)}
-                                      className="w-full text-xs rounded-md border border-gray-200 dark:border-slate-800 p-2 bg-white dark:bg-slate-950 text-gray-700 dark:text-slate-200"
-                                    />
-                                  </div>
-                                </div>
-                                <div className="flex justify-end gap-2 pt-2">
-                                  <button
-                                    onClick={() => setEditingTaskId(null)}
-                                    className="px-3 py-1.5 text-xs text-gray-500 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 rounded-md cursor-pointer"
-                                  >
-                                    Hủy bỏ
-                                  </button>
-                                  <button
-                                    onClick={() => handleSaveTaskEdit(task.id)}
-                                    className="px-3 py-1.5 text-xs text-white bg-indigo-650 hover:bg-indigo-700 rounded-md cursor-pointer font-semibold"
-                                  >
-                                    Lưu chỉnh sửa
-                                  </button>
-                                </div>
-                              </div>
-                            ) : (
-                              /* Standard View Block */
-                              <div className="space-y-3.5">
-                                <div className="flex items-start justify-between gap-4">
-                                  <div className="space-y-1">
-                                    <span className="text-[10px] font-extrabold text-indigo-650 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 px-2 py-0.5 rounded-md border border-indigo-100/40 dark:border-indigo-900/30 inline-block max-w-[320px] sm:max-w-md truncate" title={project ? project.name : 'Chưa định nghĩa Gói thầu'}>
-                                      {project ? project.name : 'Không xác định Gói thầu'}
-                                    </span>
-                                    <h4 className={`text-sm sm:text-base font-bold leading-relaxed ${
-                                      task.isCompleted ? 'line-through text-gray-400 dark:text-slate-500' : 'text-gray-850 dark:text-slate-100'
-                                    }`}>
-                                      {task.content}
-                                    </h4>
-                                  </div>
-
-                                  {/* Custom Checkbox as Status Button */}
-                                  <button
-                                    type="button"
-                                    id={`toggle-complete-btn-${task.id}`}
-                                    onClick={() => handleToggleTaskStatus(task.id)}
-                                    className={`shrink-0 flex items-center justify-center w-6 h-6 rounded-lg border-2 transition-all duration-150 cursor-pointer ${
-                                      task.isCompleted
-                                        ? 'border-emerald-500 bg-emerald-500 text-white'
-                                        : isOverdue
-                                        ? 'border-rose-405 dark:border-rose-600 bg-rose-50 dark:bg-rose-950/40 text-rose-600'
-                                        : 'border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-transparent hover:border-indigo-500 hover:bg-indigo-50/10'
-                                    }`}
-                                    title={task.isCompleted ? "Đánh dấu Chưa hoàn thành" : "Hoàn thành & Đánh giá hiệu suất thầu"}
-                                  >
-                                    <Icons.Check />
-                                  </button>
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-500 dark:text-slate-400 border-t border-gray-50 dark:border-slate-800/60 pt-3">
-                                  <div className="space-y-1 font-medium">
-                                    <p className="flex items-center gap-1.5 text-gray-450 dark:text-slate-400">
-                                      <span className="text-gray-400"><Icons.Clock /></span>
-                                      <span>Bắt đầu: {formatReadableDateTime(task.startTime)}</span>
-                                    </p>
-                                    <p className="flex items-center gap-1.5">
-                                      <span className="text-gray-400"><Icons.Clock /></span>
-                                      <span>Hạn chót: <strong className="text-gray-700 dark:text-slate-300">{formatReadableDateTime(task.planEndTime)}</strong></span>
-                                    </p>
-                                  </div>
-
-                                  <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2.5">
-                                    {task.isCompleted ? (
-                                      <div className="space-y-1 text-left sm:text-right w-full sm:w-auto">
-                                        <p className="text-[11px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100/55 dark:border-emerald-900/30 rounded-md px-2 py-0.5 inline-block">
-                                          ✓ Đã xong: {formatReadableDateTime(task.completedAt)}
-                                        </p>
-                                        <p className="text-[10px] text-gray-450 dark:text-slate-500 font-bold uppercase tracking-wider">
-                                          Đánh giá: {' '}
-                                          <span className={task.evaluation === 'Dat' ? 'text-emerald-500' : 'text-rose-500'}>
-                                            {task.evaluation === 'Dat' ? 'ĐẠT KỸ THUẬT' : 'CHƯA ĐẠT KỸ THUẬT'}
-                                          </span>
-                                        </p>
-                                      </div>
-                                    ) : (
-                                      <span className={`inline-flex items-center gap-1 text-[11px] font-bold py-1 px-2.5 rounded-lg border ${
-                                        isOverdue
-                                          ? 'bg-rose-50 dark:bg-rose-955/20 border-rose-100 dark:border-rose-950/40 text-rose-700 animate-pulse'
-                                          : 'bg-indigo-50 dark:bg-indigo-955/20 border-indigo-100 dark:border-indigo-900/40 text-indigo-700'
-                                      }`}>
-                                        <Icons.Clock />
-                                        <span>{remaining.text}</span>
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Remarks & Lessons learned section */}
-                                {task.isCompleted && task.remarks && (
-                                  <div className="bg-slate-50/50 dark:bg-slate-950/40 p-3 rounded-xl border border-gray-100/60 dark:border-slate-800 text-xs">
-                                    <strong className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 block mb-1">
-                                      Ghi chú / Kinh nghiệm:
-                                    </strong>
-                                    <p className="text-gray-650 dark:text-slate-350 italic whitespace-pre-wrap leading-relaxed">
-                                      "{task.remarks}"
-                                    </p>
-                                  </div>
-                                )}
-
-                                {/* Action Buttons Panel (Edit, Delete) */}
-                                <div className="flex justify-end items-center gap-2 border-t border-gray-50 dark:border-slate-800/30 pt-2.5">
-                                  <button
-                                    type="button"
-                                    id={`edit-task-btn-${task.id}`}
-                                    onClick={() => startEditTask(task)}
-                                    className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold text-gray-500 dark:text-slate-400 hover:text-indigo-650 dark:hover:text-indigo-400 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-850 border border-transparent hover:border-gray-100 dark:hover:border-slate-800 transition duration-150 cursor-pointer"
-                                    title="Chỉnh sửa chi tiết công việc"
-                                  >
-                                    <Icons.Edit />
-                                    <span>Sửa</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    id={`delete-task-btn-${task.id}`}
-                                    onClick={() => handleDeleteTask(task.id)}
-                                    className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold text-gray-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50/20 dark:hover:bg-rose-950/10 border border-transparent hover:border-rose-100/40 dark:hover:border-rose-900/20 transition duration-150 cursor-pointer"
-                                    title="Xóa công việc"
-                                  >
-                                    <Icons.Trash />
-                                    <span>Xóa</span>
-                                  </button>
-                                </div>
-
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                </div>
-
               </div>
-            )}
+            </header>
 
-            {/* TAB CONTENT: PROJECTS MANAGER */}
-            {currentTab === 'projects' && (
-              <div className="space-y-6">
-                
-                {/* Header Info */}
-                <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 p-5 rounded-2xl shadow-xs transition-colors duration-200">
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <span className="text-indigo-600 dark:text-indigo-450">
-                      <Icons.Project />
+            {/* Navigation tabs */}
+            <div className="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-850/60 shadow-xs">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex gap-2 sm:gap-4 py-3">
+                  <button
+                    type="button"
+                    id="tab-btn-dashboard"
+                    onClick={() => setCurrentTab('dashboard')}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition duration-150 ${
+                      currentTab === 'dashboard'
+                        ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/10'
+                        : 'text-gray-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <Icon name="TrendingUp" className="w-4 h-4" />
+                    <span>Dashboard Hiệu Suất KPI</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    id="tab-btn-tasks"
+                    onClick={() => setCurrentTab('tasks')}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition duration-150 ${
+                      currentTab === 'tasks'
+                        ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/10'
+                        : 'text-gray-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <Icon name="ClipboardList" className="w-4 h-4" />
+                    <span>Sổ Nhật Ký Công Việc</span>
+                    <span className="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-extrabold text-[10px] px-1.5 py-0.5 rounded-full border border-indigo-100/30 dark:border-indigo-900/10 ml-0.5">
+                      {tasks.filter(t => !t.isCompleted).length}
                     </span>
-                    <span>Quản Lý Dự Án & Danh Mục Gói Thầu</span>
-                  </h2>
-                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
-                    Thêm thắt, sắp đặt hoặc giải tán các gói thầu thầu đang theo dõi. Lưu ý: Xóa gói thầu thầu sẽ xóa sạch mọi tiến trình mốc công việc phụ thuộc.
-                  </p>
+                  </button>
                 </div>
+              </div>
+            </div>
 
+            {/* Main Application Content */}
+            <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 w-full animate-fade-in">
+              {currentTab === 'dashboard' ? (
+                <Dashboard 
+                  projects={projects} 
+                  tasks={tasks} 
+                  onResetData={handleResetData} 
+                />
+              ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                   
-                  {/* Left Column: Create Project Form */}
-                  <div className="lg:col-span-1 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 shadow-sm transition-colors duration-200">
-                    <h3 className="font-bold text-gray-800 dark:text-white text-base mb-4 flex items-center gap-2">
-                      <Icons.FolderPlus />
-                      <span>Thêm Gói Thầu Mới</span>
-                    </h3>
-                    <form onSubmit={handleAddProjectDirect} className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                          Tên Gói thầu / Dự án thầu <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          id="direct-project-name"
-                          placeholder="Nhập tên gói thầu (Ví dụ: Gói thầu Thiết bị thầu...)"
-                          className="w-full rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2 text-sm bg-white dark:bg-slate-950 text-gray-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                          required
-                        />
-                      </div>
-                      <button
-                        type="submit"
-                        id="direct-project-submit"
-                        className="w-full bg-indigo-600 hover:bg-indigo-705 text-white font-bold text-xs py-2.5 rounded-xl transition duration-150 flex items-center justify-center gap-1.5 cursor-pointer active:translate-y-px"
-                      >
-                        <Icons.Add />
-                        <span>Tạo Gói thầu mới</span>
-                      </button>
-                    </form>
+                  {/* Left Column: Form adding */}
+                  <div className="lg:col-span-1">
+                    <TaskForm 
+                      projects={projects} 
+                      onAddTask={handleAddTask} 
+                      onAddProject={handleAddProject} 
+                    />
                   </div>
 
-                  {/* Right Column: Projects List */}
-                  <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl p-6 shadow-sm transition-colors duration-200">
-                    <h3 className="font-bold text-gray-800 dark:text-white text-base mb-4 flex items-center gap-2 border-b border-gray-50 dark:border-slate-805 pb-3">
-                      <Icons.Project />
-                      <span>Danh Sách Dự Án Đang Chạy ({projects.length})</span>
-                    </h3>
+                  {/* Right Column: Listing and Filters */}
+                  <div className="lg:col-span-2 space-y-4">
+                    {/* Filters bar */}
+                    <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm space-y-4 transition-all duration-200">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-50 dark:border-slate-800 pb-3">
+                        <div className="flex items-center gap-1.5 text-gray-700 dark:text-white">
+                          <Icon name="Filter" className="w-4 h-4 text-indigo-550" />
+                          <span className="font-bold text-sm">Bộ Lọc & Tìm Kiếm Công Việc</span>
+                        </div>
+                        <span className="text-[11px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                          Kết quả: {filteredTasks.length} / {tasks.length} dòng
+                        </span>
+                      </div>
 
-                    {projects.length === 0 ? (
-                      <p className="text-center py-8 text-gray-400 dark:text-slate-500 text-sm italic">
-                        Chưa có gói thầu nào được thiết lập. Hãy tạo dự án thầu đầu tiên để phân công công việc.
-                      </p>
-                    ) : (
-                      <div className="divide-y divide-gray-100 dark:divide-slate-800">
-                        {projects.map((p) => {
-                          const projTasks = tasks.filter((t) => t.projectId === p.id);
-                          const active = projTasks.filter((t) => !t.isCompleted).length;
-                          const completed = projTasks.filter((t) => t.isCompleted).length;
+                      {/* Filter Controls Row 1: Project & Status */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+                            Lọc theo Dự án
+                          </label>
+                          <select
+                            id="filter-project-select"
+                            className="w-full rounded-xl border border-gray-200 dark:border-slate-800 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            value={selectedFilterProjectId}
+                            onChange={(e) => setSelectedFilterProjectId(e.target.value)}
+                          >
+                            <option value="all">-- Tất cả Dự án / Gói thầu --</option>
+                            {projects.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                {p.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+                            Trạng thái công việc
+                          </label>
+                          <div className="flex gap-1 bg-slate-50 dark:bg-slate-950 p-1 rounded-xl border border-gray-150 dark:border-slate-850">
+                            <button
+                              type="button"
+                              id="filter-status-all"
+                              onClick={() => setStatusFilter('all')}
+                              className={`flex-1 text-center py-1.5 rounded-lg text-xs font-bold transition duration-150 ${
+                                statusFilter === 'all'
+                                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                                  : 'text-gray-400 dark:text-slate-500 hover:text-gray-600'
+                              }`}
+                            >
+                              Tất cả
+                            </button>
+                            <button
+                              type="button"
+                              id="filter-status-active"
+                              onClick={() => setStatusFilter('active')}
+                              className={`flex-1 text-center py-1.5 rounded-lg text-xs font-bold transition duration-150 ${
+                                statusFilter === 'active'
+                                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                                  : 'text-gray-400 dark:text-slate-500 hover:text-gray-600'
+                              }`}
+                            >
+                              Đang chạy
+                            </button>
+                            <button
+                              type="button"
+                              id="filter-status-completed"
+                              onClick={() => setStatusFilter('completed')}
+                              className={`flex-1 text-center py-1.5 rounded-lg text-xs font-bold transition duration-150 ${
+                                statusFilter === 'completed'
+                                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                                  : 'text-gray-400 dark:text-slate-500 hover:text-gray-600'
+                              }`}
+                            >
+                              Đã xong
+                            </button>
+                            <button
+                              type="button"
+                              id="filter-status-overdue"
+                              onClick={() => setStatusFilter('overdue')}
+                              className={`flex-1 text-center py-1.5 rounded-lg text-xs font-bold transition duration-150 ${
+                                statusFilter === 'overdue'
+                                  ? 'bg-white dark:bg-slate-850 text-rose-600 dark:text-rose-400 shadow-xs'
+                                  : 'text-gray-400 dark:text-slate-500 hover:text-gray-600'
+                              }`}
+                            >
+                              Trễ hạn
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Filter Controls Row 2: Search Input */}
+                      <div>
+                        <div className="relative">
+                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                            <Icon name="Search" className="w-4 h-4" />
+                          </span>
+                          <input
+                            type="text"
+                            id="search-input"
+                            placeholder="Nhập nội dung công việc để tìm kiếm nhanh..."
+                            className="w-full rounded-xl border border-gray-200 dark:border-slate-800 pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Task Cards List */}
+                    <div className="space-y-3">
+                      {filteredTasks.length === 0 ? (
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-8 text-center transition-all duration-200">
+                          <div className="w-12 h-12 bg-gray-50 dark:bg-slate-850 text-gray-400 dark:text-slate-550 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <Icon name="ClipboardList" className="w-6 h-6" />
+                          </div>
+                          <h4 className="text-sm font-bold text-gray-700 dark:text-slate-350">Không tìm thấy công việc</h4>
+                          <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
+                            Hãy thử đổi bộ lọc dự án, trạng thái hoặc tạo thêm một công việc mới.
+                          </p>
+                        </div>
+                      ) : (
+                        filteredTasks.map((task) => {
+                          const project = projects.find((p) => p.id === task.projectId);
+                          const remaining = getRemainingTimeText(task.planEndTime);
+                          const isOverdue = !task.isCompleted && remaining.isOverdue;
 
                           return (
-                            <div key={p.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 first:pt-0 last:pb-0">
-                              <div className="space-y-1.5">
-                                <h4 className="text-sm sm:text-base font-bold text-gray-900 dark:text-slate-100">
-                                  {p.name}
-                                </h4>
-                                <div className="flex flex-wrap gap-2 text-xs font-medium">
-                                  <span className="text-gray-400 font-mono">
-                                    Khởi tạo: {new Date(p.createdAt).toLocaleDateString('vi-VN')}
+                            <div 
+                              key={task.id} 
+                              className={`bg-white dark:bg-slate-900 rounded-2xl border p-5 shadow-xs transition-all duration-150 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between ${
+                                task.isCompleted
+                                  ? 'border-gray-100 dark:border-slate-850 opacity-90'
+                                  : isOverdue
+                                    ? 'border-rose-250 dark:border-rose-950/50 bg-rose-50/10 dark:bg-rose-950/5'
+                                    : 'border-gray-100 dark:border-slate-800/80 hover:border-indigo-200 dark:hover:border-indigo-950/45'
+                              }`}
+                            >
+                              <div className="space-y-3 flex-1 min-w-0">
+                                {/* Project badge name */}
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50/70 dark:bg-indigo-950/40 px-2.5 py-0.5 rounded-lg border border-indigo-100/30 dark:border-indigo-900/10 truncate max-w-[280px] sm:max-w-md">
+                                    <Icon name="Folder" className="w-3 h-3 shrink-0" />
+                                    {project ? project.name : 'Dự án không xác định'}
                                   </span>
-                                  <span className="text-indigo-600 dark:text-indigo-400 font-semibold bg-indigo-50 dark:bg-indigo-950/30 px-2 py-0.5 rounded border border-indigo-100/30">
-                                    {projTasks.length} mốc thầu
-                                  </span>
-                                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded border border-emerald-100/30">
-                                    Đã xong: {completed}
-                                  </span>
-                                  {active > 0 && (
-                                    <span className="text-sky-600 dark:text-sky-400 font-semibold bg-sky-50 dark:bg-sky-950/30 px-2 py-0.5 rounded border border-sky-100/30">
-                                      Đang làm: {active}
+                                  
+                                  {/* Overdue/On-time indicator status badge */}
+                                  {task.isCompleted ? (
+                                    <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-lg ${
+                                      task.evaluation === 'Dat'
+                                        ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100/50 dark:border-emerald-900/20'
+                                        : 'bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-450 border border-rose-100/50 dark:border-rose-950/20'
+                                    }`}>
+                                      <Icon name={task.evaluation === 'Dat' ? 'CheckCircle2' : 'AlertTriangle'} className="w-3 h-3" />
+                                      {task.evaluation === 'Dat' ? 'Nghiệm thu: ĐẠT' : 'Nghiệm thu: CHƯA ĐẠT'}
+                                    </span>
+                                  ) : isOverdue ? (
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 px-2.5 py-0.5 rounded-lg border border-rose-200/50 dark:border-rose-900/30 animate-pulse">
+                                      <Icon name="AlertTriangle" className="w-3 h-3" />
+                                      TRỄ HẠN
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 px-2.5 py-0.5 rounded-lg border border-sky-100/40 dark:border-sky-900/10">
+                                      {remaining.text}
                                     </span>
                                   )}
                                 </div>
+
+                                {/* Main Task Description */}
+                                <p className={`text-sm sm:text-base font-semibold leading-relaxed ${
+                                  task.isCompleted 
+                                    ? 'line-through text-slate-400 dark:text-slate-550 font-normal' 
+                                    : 'text-slate-800 dark:text-slate-100'
+                                }`}>
+                                  {task.content}
+                                </p>
+
+                                {/* Date-time log timelines */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-medium text-slate-400 dark:text-slate-500 border-t border-slate-50 dark:border-slate-850/60 pt-3">
+                                  <div className="space-y-0.5">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-350 dark:text-slate-600">Bắt đầu thầu:</p>
+                                    <p className="text-slate-650 dark:text-slate-400">{formatReadableDateTime(task.startTime)}</p>
+                                  </div>
+                                  <div className="space-y-0.5">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-350 dark:text-slate-600">
+                                      {task.isCompleted ? 'Nghiệm thu thực tế:' : 'Hạn hoàn thành kế hoạch:'}
+                                    </p>
+                                    <p className={task.isCompleted ? 'text-emerald-600 dark:text-emerald-450 font-semibold' : isOverdue ? 'text-rose-650 dark:text-rose-400 font-semibold' : 'text-slate-650 dark:text-slate-400'}>
+                                      {task.isCompleted 
+                                        ? formatReadableDateTime(task.completedAt) 
+                                        : formatReadableDateTime(task.planEndTime)}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Custom Remarks / Lessons learned description when completed */}
+                                {task.isCompleted && task.remarks && (
+                                  <div className="bg-slate-50/60 dark:bg-slate-950/30 p-3 rounded-xl border border-gray-100 dark:border-slate-850/60 text-xs italic">
+                                    <span className="font-bold text-slate-450 dark:text-slate-500 block mb-1 uppercase tracking-wider text-[9px] not-italic">Nhận xét & Biện pháp:</span>
+                                    <span className="text-slate-600 dark:text-slate-350">"{task.remarks}"</span>
+                                  </div>
+                                )}
                               </div>
 
-                              <button
-                                type="button"
-                                id={`delete-proj-btn-${p.id}`}
-                                onClick={() => handleDeleteProject(p.id)}
-                                className="sm:self-center self-start flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-250 dark:border-rose-950/50 rounded-lg transition duration-150 cursor-pointer shrink-0"
-                                title="Xóa gói thầu thầu và toàn bộ công việc đi kèm"
-                              >
-                                <Icons.Trash />
-                                <span>Xóa gói thầu</span>
-                              </button>
+                              {/* Actions container row */}
+                              <div className="flex sm:flex-col items-center justify-end gap-2 shrink-0 border-t sm:border-t-0 border-slate-50 dark:border-slate-850 pt-3 sm:pt-0">
+                                {!task.isCompleted && (
+                                  <button
+                                    type="button"
+                                    id={`complete-btn-${task.id}`}
+                                    onClick={() => handleCompleteClick(task)}
+                                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition duration-150 cursor-pointer w-full active:translate-y-px"
+                                  >
+                                    <Icon name="CheckCircle2" className="w-4 h-4" />
+                                    <span>Nghiệm thu KPI</span>
+                                  </button>
+                                )}
+                                
+                                <button
+                                  type="button"
+                                  id={`delete-btn-${task.id}`}
+                                  onClick={() => handleDeleteTask(task.id)}
+                                  className="p-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-xl transition duration-150 cursor-pointer"
+                                  title="Xóa công việc này"
+                                >
+                                  <Icon name="Trash2" className="w-4 h-4" />
+                                </button>
+                              </div>
                             </div>
                           );
-                        })}
-                      </div>
-                    )}
+                        })
+                      )}
+                    </div>
                   </div>
 
                 </div>
+              )}
+            </main>
 
+            {/* Footer */}
+            <footer className="bg-white dark:bg-slate-900 border-t border-gray-150 dark:border-slate-850 py-5 transition-all duration-200">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-450 dark:text-slate-500 font-medium">
+                <p>© 2026 Quản Lý Hiệu Suất Đấu Thầu & KPI. Tối ưu hóa 100% chạy offline trực tiếp khi kích đúp chuột.</p>
+                <p className="mt-1 font-semibold text-indigo-500">Thiết kế bởi Tổ chức Quản trị thầu thầu</p>
               </div>
-            )}
-
-            {/* Footer rights block */}
-            <footer className="text-center text-gray-400 dark:text-slate-500 text-xs mt-12 border-t border-gray-100 dark:border-slate-900 pt-5 font-mono">
-              <p>© 2026 Tender KPI Tracker Core Engine. Hệ thống Quản trị Tiến độ Offline-first.</p>
-              <p className="mt-1">Dữ liệu được lưu an toàn trên trình duyệt cục bộ của bạn.</p>
             </footer>
 
-            {/* Task Evaluation Modal Overlay */}
+            {/* KPI Evaluation Overlay modal popup */}
             <TaskEvaluationModal
-              isOpen={evalModalOpen}
-              taskContent={taskToEval ? taskToEval.content : ''}
-              onClose={() => {
-                setEvalModalOpen(false);
-                setTaskToEval(null);
-              }}
-              onSubmit={handleSaveTaskEvaluation}
+              isOpen={!!evaluatingTask}
+              taskContent={evaluatingTask ? evaluatingTask.content : ''}
+              onClose={() => setEvaluatingTask(null)}
+              onSubmit={handleEvaluationSubmit}
             />
-
           </div>
         );
       }
 
-      // ==========================================
-      // ROOT INJECTION
-      // ==========================================
-      const root = ReactDOM.createRoot(document.getElementById('root'));
+      // Root render initializer
+      const container = document.getElementById('root');
+      const root = ReactDOM.createRoot(container);
       root.render(<App />);
     </script>
   </body>
