@@ -125,115 +125,7 @@
 
     <!-- TAB 1: DASHBOARD & MEASUREMENTS -->
     <section id="view-dashboard" class="space-y-6">
-      <!-- KPI Stats Grid -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Card 1 -->
-        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-xs transition-all duration-200 flex items-center gap-3">
-          <div class="p-3 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl shrink-0">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
-          </div>
-          <div>
-            <p class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Tổng Gói Thầu</p>
-            <h4 id="stat-total-projects" class="text-xl font-bold text-gray-900 dark:text-white mt-0.5">0</h4>
-          </div>
-        </div>
-        <!-- Card 2 -->
-        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-xs transition-all duration-200 flex items-center gap-3">
-          <div class="p-3 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 rounded-xl shrink-0">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2" /></svg>
-          </div>
-          <div>
-            <p class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Việc Đã Giao</p>
-            <h4 id="stat-total-tasks" class="text-xl font-bold text-gray-900 dark:text-white mt-0.5">0</h4>
-          </div>
-        </div>
-        <!-- Card 3 -->
-        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-xs transition-all duration-200 flex items-center gap-3">
-          <div class="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl shrink-0">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          </div>
-          <div>
-            <p class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Nghiệm Thu KPI</p>
-            <h4 id="stat-completed-tasks" class="text-xl font-bold text-gray-900 dark:text-white mt-0.5">0</h4>
-          </div>
-        </div>
-        <!-- Card 4 -->
-        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-xs transition-all duration-200 flex items-center gap-3">
-          <div class="p-3 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl shrink-0">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4" /></svg>
-          </div>
-          <div>
-            <p class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Đang Trễ Hạn</p>
-            <h4 id="stat-overdue-tasks" class="text-xl font-extrabold text-gray-900 dark:text-white mt-0.5">0</h4>
-          </div>
-        </div>
-      </div>
-
-      <!-- KPI Radial and Summary Section -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- KPI Percentage Block -->
-        <div class="md:col-span-1 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 flex flex-col items-center justify-center text-center shadow-xs">
-          <span class="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-4">Chỉ Số KPI Hoàn Thành Đúng Hạn</span>
-          
-          <div class="relative w-36 h-36 flex items-center justify-center">
-            <!-- Circular Progress SVG -->
-            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="40" stroke="currentColor" stroke-width="8" fill="transparent" class="text-slate-100 dark:text-slate-850" />
-              <circle id="kpi-radial-circle" cx="50" cy="50" r="40" stroke="currentColor" stroke-width="8" fill="transparent" stroke-dasharray="251.2" stroke-dashoffset="100" stroke-linecap="round" class="text-indigo-600 dark:text-indigo-400 transition-all duration-500" />
-            </svg>
-            <div class="absolute flex flex-col items-center">
-              <span id="kpi-percentage-text" class="text-3xl font-extrabold font-display text-gray-900 dark:text-white">0%</span>
-              <span class="text-[10px] font-bold text-gray-450 dark:text-slate-400 tracking-wider">ĐÚNG HẠN</span>
-            </div>
-          </div>
-
-          <div class="mt-6 w-full grid grid-cols-2 gap-2 text-left border-t border-gray-100 dark:border-slate-800 pt-4">
-            <div>
-              <p class="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase">Xử lý đúng hạn</p>
-              <p id="kpi-count-on-time" class="text-sm font-bold text-indigo-650 dark:text-indigo-400">0 việc</p>
-            </div>
-            <div>
-              <p class="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase">Tổng nghiệm thu</p>
-              <p id="kpi-count-total-completed" class="text-sm font-bold text-slate-800 dark:text-slate-350">0 việc</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- KPI Breakdown and Chart by Projects -->
-        <div class="md:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 shadow-xs flex flex-col">
-          <div class="mb-4">
-            <h3 class="font-bold text-sm text-gray-900 dark:text-white uppercase tracking-wider">Tiến Độ Theo Từng Gói Thầu</h3>
-            <p class="text-xs text-gray-550 dark:text-slate-400 mt-0.5">Tỷ lệ công việc hoàn thành và tỷ lệ đạt chất lượng nghiệm thu kỹ thuật</p>
-          </div>
-          
-          <div id="project-kpi-bars-container" class="space-y-4 flex-1">
-            <!-- Injected by JS -->
-          </div>
-        </div>
-      </div>
-
-      <!-- Historical Remarks / Lessons Learned -->
-      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 shadow-xs">
-        <div class="mb-4">
-          <h3 class="font-bold text-sm text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-            <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-            Nhật Ký Nhận Xét & Bài Học Kinh Nghiệm Gói Thầu
-          </h3>
-          <p class="text-xs text-gray-550 dark:text-slate-400 mt-0.5">Lưu trữ các giải pháp sửa lỗi, nhận xét chuyên gia, hỗ trợ cải thiện năng lực kỹ thuật các lần sau</p>
-        </div>
-
-        <div id="lessons-learned-container" class="space-y-3 max-h-[280px] overflow-y-auto pr-1">
-          <!-- Injected by JS -->
-        </div>
-      </div>
-
-      <!-- Quick Reset System Data Button -->
-      <div class="flex justify-center">
-        <button id="reset-system-btn" class="flex items-center gap-1.5 px-4 py-2 border border-gray-200 dark:border-slate-800 rounded-xl text-xs text-gray-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition cursor-pointer font-medium">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-          Đặt Lại Toàn Bộ Dữ Liệu Góc (Reset)
-        </button>
-      </div>
+      <!-- Generated dynamically by renderDashboard() in JS -->
     </section>
 
     <!-- TAB 2: DETAILED TASKS LOG -->
@@ -687,19 +579,6 @@
       document.getElementById('project-form').addEventListener('submit', handleProjectFormSubmit);
       document.getElementById('project-form-cancel-btn').addEventListener('click', resetProjectForm);
 
-      // Reset System button
-      document.getElementById('reset-system-btn').addEventListener('click', () => {
-        if (confirm('Bạn có chắc chắn muốn đặt lại dữ liệu ban đầu không? Mọi thay đổi hiện tại của bạn sẽ bị mất!')) {
-          localStorage.removeItem(STORAGE_KEY_PROJECTS);
-          localStorage.removeItem(STORAGE_KEY_TASKS);
-          state.projects = getMockProjects();
-          state.tasks = getMockTasks();
-          saveState();
-          renderApp();
-          showToast('Đã đặt lại dữ liệu gốc thành công!');
-        }
-      });
-
       // Evaluation Modal actions
       document.getElementById('close-eval-modal-btn').addEventListener('click', closeEvalModal);
       document.getElementById('close-eval-modal-footer-btn').addEventListener('click', closeEvalModal);
@@ -798,158 +677,451 @@
     // ---------------------------------------------------------
     // 4. RENDERING VIEWS: DASHBOARD (Analytic Charts & Stats)
     // ---------------------------------------------------------
+    // ---------------------------------------------------------
+    // 4. RENDERING VIEWS: DASHBOARD (Analytic Charts & Stats)
+    // ---------------------------------------------------------
     function renderDashboard() {
       const nowMs = Date.now();
 
-      // Standard stats counters
+      // 1. Thống kê tổng số lượng
       const totalProjects = state.projects.length;
-      const totalTasks = state.tasks.length;
+      
+      // Tổng số dự án đang thực hiện (có ít nhất 1 công việc chưa xong)
+      const activeProjectsCount = state.projects.filter(p => {
+        const projTasks = state.tasks.filter(t => t.projectId === p.id);
+        return projTasks.some(t => !t.isCompleted);
+      }).length;
+
+      const totalTasksCreated = state.tasks.length;
+      
       const completedTasks = state.tasks.filter(t => t.isCompleted);
       const completedTasksCount = completedTasks.length;
+
       const overdueTasksCount = state.tasks.filter(
         t => !t.isCompleted && new Date(t.planEndTime).getTime() < nowMs
       ).length;
 
-      document.getElementById('stat-total-projects').innerText = totalProjects;
-      document.getElementById('stat-total-tasks').innerText = totalTasks;
-      document.getElementById('stat-completed-tasks').innerText = completedTasksCount;
-      document.getElementById('stat-overdue-tasks').innerText = overdueTasksCount;
-
-      // Animate card highlight if any overdue task exists
-      const overdueCard = document.getElementById('stat-overdue-tasks').parentElement.parentElement;
-      if (overdueTasksCount > 0) {
-        overdueCard.classList.add('border-rose-300', 'bg-rose-50/50', 'dark:bg-rose-950/20');
-        document.getElementById('stat-overdue-tasks').classList.add('text-rose-600', 'animate-pulse');
-      } else {
-        overdueCard.classList.remove('border-rose-300', 'bg-rose-50/50', 'dark:bg-rose-950/20');
-        document.getElementById('stat-overdue-tasks').classList.remove('text-rose-600', 'animate-pulse');
-      }
-
-      // Calculate KPI on time percentage
+      // 2. Tỷ lệ hoàn thành đúng hạn (KPI)
+      // KPI% = (tổng số việc hoàn thành đúng hạn / tổng số việc đã xong)
       const completedOnTime = completedTasks.filter(t => {
-        return new Date(t.completedAt).getTime() <= new Date(t.planEndTime).getTime();
-      }).length;
+        const completedTime = new Date(t.completedAt).getTime();
+        const planEndTime = new Date(t.planEndTime).getTime();
+        return completedTime <= planEndTime;
+      });
+      const completedOnTimeCount = completedOnTime.length;
 
-      const kpiPercentage = completedTasksCount > 0 ? Math.round((completedOnTime / completedTasksCount) * 100) : 0;
-      
-      document.getElementById('kpi-percentage-text').innerText = `${kpiPercentage}%`;
-      document.getElementById('kpi-count-on-time').innerText = `${completedOnTime} việc`;
-      document.getElementById('kpi-count-total-completed').innerText = `${completedTasksCount} việc`;
+      const kpiRate = completedTasksCount > 0 
+        ? Math.round((completedOnTimeCount / completedTasksCount) * 100) 
+        : 0;
 
-      // Update circular SVG bar
-      // 251.2 is the circumference for a circle of radius 40
-      const strokeOffset = 251.2 - (251.2 * kpiPercentage) / 100;
-      document.getElementById('kpi-radial-circle').style.strokeDashoffset = strokeOffset;
-
-      // Render Projects Bars
-      renderProjectKPIBars();
-
-      // Render Lessons Learned log
-      renderLessonsLearned();
-    }
-
-    function renderProjectKPIBars() {
-      const container = document.getElementById('project-kpi-bars-container');
-      if (state.projects.length === 0) {
-        container.innerHTML = `<p class="text-xs text-gray-400 italic text-center py-6">Chưa có gói thầu nào được tạo.</p>`;
-        return;
-      }
-
-      let html = '';
-      state.projects.forEach(proj => {
+      // Thống kê theo từng Dự án
+      const projectStats = state.projects.map(proj => {
         const projTasks = state.tasks.filter(t => t.projectId === proj.id);
-        const total = projTasks.length;
-        const completed = projTasks.filter(t => t.isCompleted).length;
-        const overdue = projTasks.filter(t => !t.isCompleted && new Date(t.planEndTime).getTime() < Date.now()).length;
+        const activeCount = projTasks.filter(t => !t.isCompleted).length;
+        const completedCount = projTasks.filter(t => t.isCompleted).length;
+        
+        // Tỷ lệ Đạt% = Số việc "Đạt" / Tổng số việc đã xong của dự án
+        const passedTasks = projTasks.filter(t => t.isCompleted && t.evaluation === 'Dat');
+        const passRate = completedCount > 0 
+          ? Math.round((passedTasks.length / completedCount) * 100) 
+          : 0;
 
-        const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
+        // Danh sách các "Nhận xét / Bài học cần khắc phục" của dự án
+        const remarksList = projTasks
+          .filter(t => t.isCompleted && t.remarks && t.remarks.trim() !== '')
+          .map(t => ({
+            taskId: t.id,
+            content: t.content,
+            evaluation: t.evaluation,
+            remarks: t.remarks || '',
+            completedAt: t.completedAt || '',
+          }));
 
-        // KPI evaluation stats (How many audited completed are passed)
-        const passedTasks = projTasks.filter(t => t.isCompleted && t.evaluation === 'Dat').length;
-        const passRate = completed > 0 ? Math.round((passedTasks / completed) * 100) : 0;
-
-        html += `
-          <div class="space-y-1.5 p-3 rounded-xl border border-gray-50 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
-            <div class="flex items-start justify-between gap-4">
-              <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 line-clamp-1" title="${proj.name}">${proj.name}</span>
-              <span class="text-[10px] font-bold font-mono px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-md shrink-0">
-                ${completed}/${total} VIỆC
-              </span>
-            </div>
-
-            <!-- Double Progress Indicators -->
-            <div class="grid grid-cols-2 gap-4 pt-1">
-              <div>
-                <div class="flex justify-between text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase">
-                  <span>Tiến độ thực hiện</span>
-                  <span>${progressPercent}%</span>
-                </div>
-                <div class="w-full bg-slate-100 dark:bg-slate-850 h-2 rounded-full overflow-hidden mt-1">
-                  <div class="bg-indigo-600 dark:bg-indigo-400 h-full rounded-full transition-all" style="width: ${progressPercent}%"></div>
-                </div>
-              </div>
-
-              <div>
-                <div class="flex justify-between text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase">
-                  <span>Tỷ lệ ĐẠT KPI nghiệm thu</span>
-                  <span>${passRate}%</span>
-                </div>
-                <div class="w-full bg-slate-100 dark:bg-slate-850 h-2 rounded-full overflow-hidden mt-1">
-                  <div class="bg-emerald-500 h-full rounded-full transition-all" style="width: ${passRate}%"></div>
-                </div>
-              </div>
-            </div>
-
-            ${overdue > 0 ? `
-              <div class="flex items-center gap-1 text-[10px] text-rose-500 font-bold pt-1.5">
-                <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
-                <span>Cảnh báo: Có ${overdue} việc đang trễ hẹn hoàn thành!</span>
-              </div>
-            ` : ''}
-          </div>
-        `;
+        return {
+          ...proj,
+          activeCount,
+          completedCount,
+          passRate,
+          remarksList,
+          allTasks: projTasks,
+        };
       });
 
-      container.innerHTML = html;
-    }
-
-    function renderLessonsLearned() {
-      const container = document.getElementById('lessons-learned-container');
-      const auditedTasks = state.tasks.filter(t => t.isCompleted && t.remarks);
-
-      if (auditedTasks.length === 0) {
-        container.innerHTML = `<p class="text-xs text-gray-400 italic text-center py-6">Chưa có bài học kinh nghiệm được lưu trữ từ các lần nghiệm thu.</p>`;
-        return;
-      }
-
+      // Render the entire HTML template
       let html = '';
-      auditedTasks.forEach(task => {
-        const proj = state.projects.find(p => p.id === task.projectId);
-        const projName = proj ? proj.name : 'Gói thầu không xác định';
-        const isPass = task.evaluation === 'Dat';
 
-        html += `
-          <div class="border-l-4 p-3 bg-slate-50/70 dark:bg-slate-950/40 rounded-r-xl border-gray-150 dark:border-slate-800 ${
-            isPass ? 'border-l-emerald-500' : 'border-l-rose-500'
-          } space-y-1 text-xs">
-            <div class="flex items-center justify-between gap-2">
-              <span class="text-[9.5px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate max-w-[280px]" title="${projName}">${projName}</span>
-              <span class="font-bold text-[10px] ${isPass ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} uppercase">
-                ${isPass ? 'ĐẠT' : 'CHƯA ĐẠT'}
+      // Dashboard Header & Quick Actions
+      html += `
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 p-5 rounded-2xl shadow-xs transition-colors duration-200">
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400 animate-pulse" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-9 9-4-4-6 6" /></svg>
+            Phân Tích Tiến Độ & Hiệu Suất Công Việc
+          </h2>
+          <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
+            Theo dõi tỷ lệ hoàn thành đúng hạn (KPI), tỷ lệ đạt yêu cầu của các gói thầu và tổng hợp bài học kinh nghiệm.
+          </p>
+        </div>
+        <button
+          type="button"
+          onclick="exportTasksToCSV()"
+          class="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm hover:shadow-md transition-all duration-150 shrink-0 cursor-pointer active:translate-y-px"
+          title="Xuất báo cáo theo dõi ra file Excel (.csv)"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+          <span>Xuất Báo Cáo Excel</span>
+        </button>
+      </div>
+
+      <!-- 1. Hàng Thống kê (Cards) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Card 1: Tổng dự án -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 shadow-xs flex items-center gap-4 transition-colors duration-200">
+          <div class="p-3.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+          </div>
+          <div>
+            <p class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Tổng số Dự án</p>
+            <h4 class="text-2xl font-bold text-gray-800 dark:text-white mt-1">${totalProjects}</h4>
+            <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+              <span class="font-medium text-indigo-600 dark:text-indigo-400">${activeProjectsCount}</span> dự án đang chạy
+            </p>
+          </div>
+        </div>
+
+        <!-- Card 2: Tổng công việc -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 shadow-xs flex items-center gap-4 transition-colors duration-200">
+          <div class="p-3.5 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 rounded-xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4.672 12.001A11.959 11.959 0 0112 17c-1.61 0-3.13-.319-4.522-.899m11.196-1.12c.112-.628.18-1.273.18-1.929V8a2 2 0 00-2-2H5a2 2 0 00-2 2v5.051c0 .656.068 1.301.18 1.929m15.196 0a24.04 24.04 0 01-15.196 0" /></svg>
+          </div>
+          <div>
+            <p class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Công việc đã tạo</p>
+            <h4 class="text-2xl font-bold text-gray-800 dark:text-white mt-1">${totalTasksCreated}</h4>
+            <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+              Đang thực hiện: <span class="font-semibold text-sky-600 dark:text-sky-450">${totalTasksCreated - completedTasksCount}</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Card 3: Đã hoàn thành -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 shadow-xs flex items-center gap-4 transition-colors duration-200">
+          <div class="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          </div>
+          <div>
+            <p class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Công việc đã xong</p>
+            <h4 class="text-2xl font-bold text-gray-800 dark:text-white mt-1">${completedTasksCount}</h4>
+            <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+              Đúng hạn: <span class="font-semibold text-emerald-600 dark:text-emerald-400">${completedOnTimeCount}</span> / ${completedTasksCount}
+            </p>
+          </div>
+        </div>
+
+        <!-- Card 4: Trễ hạn -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 shadow-xs flex items-center gap-4 transition-colors duration-200 ${
+          overdueTasksCount > 0 ? 'border-rose-300 bg-rose-50/50 dark:bg-rose-950/20' : ''
+        }">
+          <div class="p-3.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4" /></svg>
+          </div>
+          <div>
+            <p class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Đang bị Trễ hạn</p>
+            <h4 class="text-2xl font-bold mt-1 ${overdueTasksCount > 0 ? 'text-rose-600 animate-pulse' : 'text-gray-800 dark:text-white'}">
+              ${overdueTasksCount}
+            </h4>
+            <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+              Yêu cầu xử lý gấp
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Tỷ lệ hoàn thành đúng hạn (KPI) & Biểu đồ trực quan -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Khối KPI -->
+        <div class="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-2xl p-6 text-white shadow-md md:col-span-1 flex flex-col justify-between relative overflow-hidden">
+          <!-- Decorative pattern -->
+          <div class="absolute right-0 bottom-0 opacity-10 pointer-events-none">
+            <svg class="w-48 h-48" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-9 9-4-4-6 6" /></svg>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-xs font-bold text-indigo-300 uppercase tracking-wider bg-indigo-800/50 px-2.5 py-1 rounded-md">
+                Chỉ số hiệu suất KPI
               </span>
+              <svg class="w-5 h-5 text-indigo-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
             </div>
-            <p class="font-medium text-slate-700 dark:text-slate-300 font-sans italic">"${task.content}"</p>
-            <div class="text-[11px] text-slate-600 dark:text-slate-400 pt-1 border-t border-dashed border-gray-200 dark:border-slate-850">
-              <span class="font-bold">Kinh nghiệm rút ra:</span> ${task.remarks}
+            <h3 class="text-lg font-semibold text-indigo-100">Tỷ Lệ Hoàn Thành Đúng Hạn</h3>
+            <p class="text-xs text-indigo-300 mt-1">Đo lường năng lực quản trị thời gian</p>
+          </div>
+
+          <div class="my-6 flex items-center justify-center gap-6">
+            <!-- SVG Circular Progress -->
+            <div class="relative w-28 h-28">
+              <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                <circle
+                  cx="18" cy="18" r="15.9155"
+                  class="text-white/10"
+                  stroke-width="3.5"
+                  stroke="currentColor"
+                  fill="none"
+                />
+                <circle
+                  cx="18" cy="18" r="15.9155"
+                  class="text-indigo-400 transition-all duration-1000 ease-out"
+                  stroke-dasharray="${kpiRate}, 100"
+                  stroke-width="3.5"
+                  stroke-linecap="round"
+                  stroke="currentColor"
+                  fill="none"
+                />
+              </svg>
+              <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span class="text-2xl font-extrabold text-white leading-none">${kpiRate}%</span>
+                <span class="text-[10px] text-indigo-200 mt-1">ĐÚNG HẠN</span>
+              </div>
             </div>
-            <div class="text-[10px] text-gray-400 dark:text-slate-500 text-right pt-0.5 font-mono">
-              Nghiệm thu lúc ${formatReadableDateTime(task.completedAt)}
+
+            <div class="text-sm space-y-1">
+              <div class="flex items-center gap-1.5 text-xs text-indigo-200">
+                <div class="w-2.5 h-2.5 bg-indigo-400 rounded-full"></div>
+                <span>Đúng hạn: <strong>${completedOnTimeCount}</strong> việc</span>
+              </div>
+              <div class="flex items-center gap-1.5 text-xs text-indigo-200">
+                <div class="w-2.5 h-2.5 bg-white/20 rounded-full"></div>
+                <span>Tổng đã xong: <strong>${completedTasksCount}</strong> việc</span>
+              </div>
             </div>
           </div>
-        `;
-      });
 
-      container.innerHTML = html;
+          <div class="border-t border-indigo-800/60 pt-3">
+            <p class="text-xs text-indigo-200">
+              ${
+                kpiRate >= 80 
+                  ? 'Excellent! Kỹ năng quản lý tiến độ tuyệt vời.' 
+                  : kpiRate >= 50 
+                  ? 'Good! Bạn đang giữ nhịp khá tốt, hãy cải thiện thêm.' 
+                  : completedTasksCount === 0 
+                  ? 'Chưa có công việc nào hoàn thành để tính KPI.' 
+                  : 'Cảnh báo! Bạn đang bị trễ hạn nhiều, hãy tối ưu hóa kế hoạch.'
+              }
+            </p>
+          </div>
+        </div>
+
+        <!-- Khối Tóm tắt Hiệu suất Dự án -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 shadow-sm md:col-span-2 transition-colors duration-200">
+          <div class="flex items-center justify-between mb-4 border-b border-gray-50 dark:border-slate-800 pb-3">
+            <div class="flex items-center gap-2">
+              <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+              <h3 class="font-semibold text-gray-800 dark:text-white">Hiệu Suất Theo Dự Án</h3>
+            </div>
+            <span class="text-xs text-gray-400 dark:text-slate-500 font-medium">Tỷ lệ Đạt yêu cầu</span>
+          </div>
+
+          <div class="space-y-4 max-h-[500px] overflow-y-auto pr-1">
+            ${
+              projectStats.length === 0 
+                ? '<p class="text-sm text-gray-400 dark:text-slate-500 text-center py-6">Chưa có dự án nào được khởi tạo.</p>'
+                : projectStats.map(p => {
+                    const totalProjTasks = p.activeCount + p.completedCount;
+                    
+                    const tasksHTML = p.allTasks.length === 0 
+                      ? `<p class="text-center text-xs text-gray-400 dark:text-slate-500 py-4 italic bg-white dark:bg-slate-950 rounded-lg border border-dashed border-gray-100 dark:border-slate-800">Chưa có công việc nào trong dự án này.</p>`
+                      : p.allTasks.map(t => {
+                          const isOverdue = !t.isCompleted && new Date(t.planEndTime).getTime() < nowMs;
+                          
+                          let badgeHTML = '';
+                          if (t.isCompleted) {
+                            if (t.evaluation === 'Dat') {
+                              badgeHTML = `<span class="inline-flex items-center text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md border border-emerald-200/50 dark:border-emerald-900/30">Đạt</span>`;
+                            } else {
+                              badgeHTML = `<span class="inline-flex items-center text-[10px] font-bold text-rose-700 dark:text-rose-400 bg-rose-100 dark:bg-rose-950/50 px-2 py-0.5 rounded-md border border-rose-200/50 dark:border-rose-900/30">Không đạt</span>`;
+                            }
+                          } else if (isOverdue) {
+                            badgeHTML = `<span class="inline-flex items-center text-[10px] font-bold text-white bg-rose-500 px-2 py-0.5 rounded-md animate-pulse">Trễ hẹn</span>`;
+                          } else {
+                            badgeHTML = `<span class="inline-flex items-center text-[10px] font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded-md border border-indigo-100/30 dark:border-indigo-900/30">Đang chạy</span>`;
+                          }
+
+                          return `
+                            <div class="flex items-start justify-between gap-3 text-xs p-2.5 rounded-lg border transition duration-150 ${
+                              t.isCompleted 
+                                ? t.evaluation === 'Dat'
+                                  ? 'bg-emerald-50/10 dark:bg-emerald-950/10 border-emerald-100/40 dark:border-emerald-900/20 text-gray-700 dark:text-slate-300'
+                                  : 'bg-rose-50/10 dark:bg-rose-950/10 border-rose-100/40 dark:border-rose-900/20 text-gray-700 dark:text-slate-300'
+                                : isOverdue
+                                  ? 'bg-rose-50/10 dark:bg-rose-950/20 border-rose-200/30 dark:border-rose-900/30 text-gray-850 dark:text-slate-200'
+                                  : 'bg-white dark:bg-slate-900 border-gray-100 dark:border-slate-800 text-gray-700 dark:text-slate-200'
+                            }">
+                              <div class="space-y-1 min-w-0">
+                                <p class="font-semibold leading-relaxed ${t.isCompleted ? 'line-through text-gray-400 dark:text-slate-500' : 'text-gray-750 dark:text-slate-200'}">
+                                  ${t.content}
+                                </p>
+                                <p class="text-[10px] text-gray-400 dark:text-slate-500 font-mono">
+                                  ${t.isCompleted 
+                                    ? `Đã xong: ${formatReadableDateTime(t.completedAt)}`
+                                    : `Hạn: ${formatReadableDateTime(t.planEndTime)}`
+                                  }
+                                </p>
+                              </div>
+                              <div class="shrink-0 pt-0.5">
+                                ${badgeHTML}
+                              </div>
+                            </div>
+                          `;
+                        }).join('');
+
+                    return `
+                    <div class="bg-gray-50/20 dark:bg-slate-950/40 rounded-xl p-4 border border-gray-100/70 dark:border-slate-800 space-y-3">
+                      <div class="flex items-center justify-between text-sm">
+                        <span class="font-bold text-gray-800 dark:text-slate-200 truncate max-w-[240px] sm:max-w-md" title="${p.name}">
+                          ${p.name}
+                        </span>
+                        <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-2.5 py-0.5 rounded-md border border-indigo-100/50 dark:border-indigo-900/30">
+                          Tỷ lệ Đạt: ${p.passRate}%
+                        </span>
+                      </div>
+                      
+                      <!-- Progress Bar -->
+                      <div class="h-2 w-full bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div 
+                          class="h-full rounded-full transition-all duration-500 ${
+                            p.passRate >= 80 
+                              ? 'bg-emerald-500' 
+                              : p.passRate >= 50 
+                              ? 'bg-indigo-500' 
+                              : 'bg-rose-500'
+                          }"
+                          style="width: ${p.passRate}%"
+                        ></div>
+                      </div>
+
+                      <div class="flex justify-between items-center text-xs text-gray-400 dark:text-slate-500 border-b border-gray-100/50 dark:border-slate-800/50 pb-2.5">
+                        <span>
+                          Trạng thái: <strong>${p.activeCount}</strong> đang chạy / <strong>${p.completedCount}</strong> đã xong
+                        </span>
+                        <span>
+                          Tổng: ${totalProjTasks} công việc
+                        </span>
+                      </div>
+
+                      <!-- Danh sách các công việc cụ thể thuộc dự án này -->
+                      <div class="space-y-2">
+                        <p class="text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+                          Công việc thực hiện (${p.allTasks.length}):
+                        </p>
+                        <div class="grid grid-cols-1 gap-2 max-h-56 overflow-y-auto pr-1">
+                          ${tasksHTML}
+                        </div>
+                      </div>
+                    </div>
+                    `;
+                  }).join('')
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Chi tiết từng dự án & Tổng hợp Nhận xét / Bài học cần khắc phục -->
+      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 shadow-sm transition-colors duration-200">
+        <div class="flex items-center gap-2 mb-6 border-b border-gray-50 dark:border-slate-800 pb-3">
+          <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5s-3.332.477-4.5 1.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+          <h3 class="font-bold text-gray-800 dark:text-white">Tổng Hợp Bài Học Kinh Nghiệm & Khắc Phục</h3>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          ${
+            projectStats.length === 0 
+              ? `<div class="lg:col-span-3 text-center py-12 text-gray-400 dark:text-slate-500 text-sm">Chưa có dự án và dữ liệu phân tích nào được tạo.</div>`
+              : projectStats.map(proj => {
+                  const remarksHTML = proj.remarksList.length === 0 
+                    ? `<div class="text-center py-8 text-gray-400 dark:text-slate-500 text-xs">Chưa có ghi chép đánh giá nào cho dự án này.</div>`
+                    : proj.remarksList.map((item, idx) => {
+                        const isPass = item.evaluation === 'Dat';
+                        return `
+                        <div class="p-3 rounded-lg border text-xs space-y-1.5 transition duration-150 ${
+                          isPass 
+                            ? 'bg-emerald-50/10 dark:bg-emerald-950/10 border-emerald-100/40 dark:border-emerald-900/30' 
+                            : 'bg-rose-50/10 dark:bg-rose-950/10 border-rose-100/40 dark:border-rose-900/30'
+                        }">
+                          <div class="flex items-center justify-between">
+                            <span class="font-semibold text-gray-500 dark:text-slate-400">Mục #${idx + 1}</span>
+                            <span class="flex items-center gap-0.5 font-bold ${
+                              isPass ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
+                            }">
+                              ${
+                                isPass 
+                                  ? `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg> <span>Đạt</span>`
+                                  : `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg> <span>Không đạt</span>`
+                              }
+                            </span>
+                          </div>
+                          
+                          <p class="text-gray-700 dark:text-slate-300 font-medium line-clamp-2" title="${item.content}">
+                            <strong>Việc:</strong> ${item.content}
+                          </p>
+                          
+                          <div class="pt-1.5 border-t border-dashed border-gray-100 dark:border-slate-800 text-gray-600 dark:text-slate-400">
+                            <p class="italic font-normal">
+                              <strong>Ghi chép:</strong> ${item.remarks}
+                            </p>
+                          </div>
+                          
+                          <p class="text-[10px] text-gray-400 dark:text-slate-500 text-right pt-0.5 font-mono">
+                            Xong: ${formatReadableDateTime(item.completedAt)}
+                          </p>
+                        </div>
+                        `;
+                      }).join('');
+
+                  return `
+                    <div class="bg-gray-50/50 dark:bg-slate-950/40 rounded-xl p-5 border border-gray-100/80 dark:border-slate-800 flex flex-col justify-between space-y-4">
+                      <div>
+                        <div class="flex items-start justify-between gap-2 border-b border-gray-100 dark:border-slate-800 pb-2 mb-3">
+                          <h4 class="font-bold text-gray-800 dark:text-slate-200 text-sm line-clamp-2" title="${proj.name}">
+                            ${proj.name}
+                          </h4>
+                          <span class="text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${
+                            proj.passRate >= 80 
+                              ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-400' 
+                              : proj.passRate >= 50 
+                              ? 'bg-indigo-100 dark:bg-indigo-950/50 text-indigo-800 dark:text-indigo-400' 
+                              : 'bg-rose-100 dark:bg-rose-950/50 text-rose-800 dark:text-rose-400'
+                          }">
+                            Đạt ${proj.passRate}%
+                          </span>
+                        </div>
+
+                        <!-- Sổ ghi chép bài học -->
+                        <div class="space-y-3 max-h-[320px] overflow-y-auto pr-1">
+                          ${remarksHTML}
+                        </div>
+                      </div>
+
+                      <div class="pt-3 border-t border-gray-100 dark:border-slate-800 text-xs text-gray-400 dark:text-slate-500 flex justify-between">
+                        <span>Hoàn thành: <strong>${proj.completedCount}</strong> việc</span>
+                        <span>Đang chạy: <strong>${proj.activeCount}</strong> việc</span>
+                      </div>
+                    </div>
+                  `;
+                }).join('')
+          }
+        </div>
+      </div>
+
+      <!-- Quick Reset System Data Button -->
+      <div class="flex justify-center mt-6">
+        <button id="reset-system-btn" onclick="triggerResetData()" class="flex items-center gap-1.5 px-4 py-2 border border-gray-200 dark:border-slate-800 rounded-xl text-xs text-gray-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 hover:bg-red-50/50 dark:hover:bg-red-950/20 transition cursor-pointer font-medium">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+          <span>Đặt Lại Toàn Bộ Dữ Liệu Gốc (Reset)</span>
+        </button>
+      </div>
+      `;
+
+      document.getElementById('view-dashboard').innerHTML = html;
     }
 
     // ---------------------------------------------------------
@@ -1517,6 +1689,21 @@
 
       showToast('Đã tải xuống file báo cáo Excel thành công!');
     }
+
+    // Expose dynamic handlers globally
+    window.triggerResetData = function() {
+      if (confirm('Bạn có chắc chắn muốn đặt lại dữ liệu ban đầu không? Mọi thay đổi hiện tại của bạn sẽ bị mất!')) {
+        localStorage.removeItem(STORAGE_KEY_PROJECTS);
+        localStorage.removeItem(STORAGE_KEY_TASKS);
+        state.projects = getMockProjects();
+        state.tasks = getMockTasks();
+        saveState();
+        renderApp();
+        showToast('Đã đặt lại dữ liệu gốc thành công!');
+      }
+    };
+    
+    window.exportTasksToCSV = exportTasksToCSV;
 
     // Launch App
     document.addEventListener('DOMContentLoaded', initApp);
