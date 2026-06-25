@@ -1,0 +1,6 @@
+{
+  "name": "Theo Dõi Công Việc",
+  "description": "Hệ thống theo dõi tiến độ công việc, cảnh báo trễ hạn và dashboard đo lường chỉ số KPI nghiệm thu các dự án.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
