@@ -585,7 +585,7 @@
       9. Nhấp vào "Triển khai" và cho phép các quyền truy cập ứng dụng.
       10. Copy URL Ứng dụng web được cung cấp và dán vào hằng số SCRIPT_URL bên dưới.
     */
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxwWaBNJIpCUoJIpjHOlc8y9_RCzVyx-3EDDLU56SPQxldbPPIdYV6DZ92Q7XFr8uVymg/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz3dBAhlTrFnJjxptD9IcdtBHQTNkTbpkJFfCHRO-wNnSC2Lutg0vuoO9g_42yMaDzJ9Q/exec";
 
     // ---------------------------------------------------------
     // 1. STATE & STORAGE PERSISTENCE
@@ -675,21 +675,29 @@
 
     // Helper to dynamically extract project names from task data
     function extractProjectsFromTasks() {
-      const uniqueProjectNames = [...new Set(state.tasks.map(t => t.projectId))].filter(Boolean);
-      const projectsList = uniqueProjectNames.map(name => ({
-        id: name,
-        name: name,
-        createdAt: new Date().toISOString()
+      state.tempProjects = state.tempProjects || [];
+      
+      // Start with defined tempProjects
+      const projectsList = state.tempProjects.map(tp => ({
+        id: tp.id,
+        name: tp.name,
+        createdAt: tp.createdAt || new Date().toISOString()
       }));
 
-      // Merge with any temp projects created via project tab that don't have tasks assigned yet
-      if (state.tempProjects && state.tempProjects.length > 0) {
-        state.tempProjects.forEach(tp => {
-          if (!projectsList.some(p => p.id === tp.id)) {
-            projectsList.push(tp);
-          }
-        });
-      }
+      // Add any projects from tasks that are not already in projectsList
+      const uniqueProjectIds = [...new Set(state.tasks.map(t => t.projectId))].filter(Boolean);
+      
+      uniqueProjectIds.forEach(id => {
+        if (!projectsList.some(p => p.id === id)) {
+          // If the ID is not in tempProjects, it might be a legacy project name or a missing project.
+          // We use the ID itself as the name as a fallback.
+          projectsList.push({
+            id: id,
+            name: id,
+            createdAt: new Date().toISOString()
+          });
+        }
+      });
 
       state.projects = projectsList;
     }
