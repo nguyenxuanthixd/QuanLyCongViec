@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -361,28 +362,33 @@
     // 0. GOOGLE SHEETS API CONFIGURATION & SETUP GUIDE
     // ---------------------------------------------------------
     /*
-      HƯỚNG DẪN KẾT NỐI GOOGLE SHEETS QUA GOOGLE APPS SCRIPT:
+      HƯỚNG DẪN KẾT NỐI GOOGLE SHEETS QUA GOOGLE APPS SCRIPT (HỖ TRỢ LƯU DỰ ÁN MỚI):
 
       1. Tạo một trang tính Google Sheets mới.
       2. Đổi tên sheet đầu tiên thành "Tasks".
-      3. Thêm hàng tiêu đề ở dòng 1 (từ cột A đến K) với các nhãn sau:
-         id | projectId | content | startTime | planEndTime | priority | isCompleted | completedAt | evaluation | remarks | deadlineHistory
+      3. Thêm một sheet thứ hai đặt tên là "Projects".
       4. Vào "Tiện ích mở rộng" (Extensions) -> Chọn "Apps Script".
-      5. Xóa hết mã mặc định và dán đoạn mã Apps Script sau vào:
+      5. Xóa hết mã mặc định và dán đoạn mã Apps Script toàn diện sau vào:
 
       ---------------------------------------------------------------------------------
       const SPREADSHEET_ID = ""; // Có thể để trống nếu Script gắn liền với trang tính
 
       function doGet(e) {
-        const sheet = getSheet();
-        const rows = sheet.getDataRange().getValues();
-        const headers = rows[0];
-        const data = [];
+        const ss = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
         
-        for (let i = 1; i < rows.length; i++) {
-          const row = rows[i];
+        // 1. Lấy dữ liệu công việc (Tasks)
+        let taskSheet = ss.getSheetByName("Tasks");
+        if (!taskSheet) {
+          taskSheet = ss.insertSheet("Tasks");
+          taskSheet.appendRow(["id", "projectId", "content", "startTime", "planEndTime", "priority", "isCompleted", "completedAt", "evaluation", "remarks", "deadlineHistory"]);
+        }
+        const taskRows = taskSheet.getDataRange().getValues();
+        const taskHeaders = taskRows[0];
+        const tasks = [];
+        for (let i = 1; i < taskRows.length; i++) {
+          const row = taskRows[i];
           const item = {};
-          headers.forEach((header, index) => {
+          taskHeaders.forEach((header, index) => {
             item[header] = row[index];
           });
           try {
@@ -390,10 +396,28 @@
           } catch(e) {
             item.deadlineHistory = [];
           }
-          data.push(item);
+          tasks.push(item);
         }
-        
-        return ContentService.createTextOutput(JSON.stringify(data))
+
+        // 2. Lấy dữ liệu dự án (Projects)
+        let projectSheet = ss.getSheetByName("Projects");
+        if (!projectSheet) {
+          projectSheet = ss.insertSheet("Projects");
+          projectSheet.appendRow(["id", "name", "createdAt"]);
+        }
+        const projectRows = projectSheet.getDataRange().getValues();
+        const projectHeaders = projectRows[0];
+        const projects = [];
+        for (let i = 1; i < projectRows.length; i++) {
+          const row = projectRows[i];
+          const item = {};
+          projectHeaders.forEach((header, index) => {
+            item[header] = row[index];
+          });
+          projects.push(item);
+        }
+
+        return ContentService.createTextOutput(JSON.stringify({ tasks, projects }))
           .setMimeType(ContentService.MimeType.JSON);
       }
 
@@ -402,10 +426,15 @@
         try {
           const payload = JSON.parse(e.postData.contents);
           const action = payload.action;
-          const task = payload.task;
-          const sheet = getSheet();
+          const ss = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
           
           if (action === "create") {
+            const task = payload.task;
+            let sheet = ss.getSheetByName("Tasks");
+            if (!sheet) {
+              sheet = ss.insertSheet("Tasks");
+              sheet.appendRow(["id", "projectId", "content", "startTime", "planEndTime", "priority", "isCompleted", "completedAt", "evaluation", "remarks", "deadlineHistory"]);
+            }
             sheet.appendRow([
               task.id,
               task.projectId,
@@ -422,6 +451,8 @@
             result.status = "success";
             result.message = "Task created successfully";
           } else if (action === "update") {
+            const task = payload.task;
+            let sheet = ss.getSheetByName("Tasks");
             const data = sheet.getDataRange().getValues();
             let found = false;
             for (let i = 1; i < data.length; i++) {
@@ -452,6 +483,7 @@
             }
           } else if (action === "delete") {
             const taskId = payload.id;
+            let sheet = ss.getSheetByName("Tasks");
             const data = sheet.getDataRange().getValues();
             let found = false;
             for (let i = 1; i < data.length; i++) {
@@ -467,6 +499,75 @@
             } else {
               result.message = "Task not found";
             }
+          } else if (action === "createProject") {
+            const project = payload.project;
+            let sheet = ss.getSheetByName("Projects");
+            if (!sheet) {
+              sheet = ss.insertSheet("Projects");
+              sheet.appendRow(["id", "name", "createdAt"]);
+            }
+            sheet.appendRow([
+              project.id,
+              project.name,
+              project.createdAt
+            ]);
+            result.status = "success";
+            result.message = "Project created successfully";
+          } else if (action === "updateProject") {
+            const project = payload.project;
+            let sheet = ss.getSheetByName("Projects");
+            if (!sheet) {
+              sheet = ss.insertSheet("Projects");
+              sheet.appendRow(["id", "name", "createdAt"]);
+            }
+            const data = sheet.getDataRange().getValues();
+            let found = false;
+            for (let i = 1; i < data.length; i++) {
+              if (data[i][0] === project.id) {
+                const rowNum = i + 1;
+                sheet.getRange(rowNum, 1, 1, 3).setValues([[
+                  project.id,
+                  project.name,
+                  project.createdAt
+                ]]);
+                found = true;
+                break;
+              }
+            }
+            if (found) {
+              result.status = "success";
+              result.message = "Project updated successfully";
+            } else {
+              result.message = "Project not found";
+            }
+          } else if (action === "deleteProject") {
+            const projectId = payload.id;
+            const taskIds = payload.taskIds || [];
+            
+            // 1. Xóa dự án khỏi sheet Projects
+            let pSheet = ss.getSheetByName("Projects");
+            if (pSheet) {
+              const pData = pSheet.getDataRange().getValues();
+              for (let i = 1; i < pData.length; i++) {
+                if (pData[i][0] === projectId) {
+                  pSheet.deleteRow(i + 1);
+                  break;
+                }
+              }
+            }
+            
+            // 2. Xóa các công việc liên kết trong sheet Tasks
+            let tSheet = ss.getSheetByName("Tasks");
+            if (tSheet) {
+              const tData = tSheet.getDataRange().getValues();
+              for (let i = tData.length - 1; i >= 1; i--) {
+                if (tData[i][1] === projectId || taskIds.indexOf(tData[i][0]) > -1) {
+                  tSheet.deleteRow(i + 1);
+                }
+              }
+            }
+            result.status = "success";
+            result.message = "Project and associated tasks deleted successfully";
           }
         } catch (err) {
           result.message = err.toString();
@@ -474,16 +575,6 @@
         
         return ContentService.createTextOutput(JSON.stringify(result))
           .setMimeType(ContentService.MimeType.JSON);
-      }
-
-      function getSheet() {
-        const ss = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
-        let sheet = ss.getSheetByName("Tasks");
-        if (!sheet) {
-          sheet = ss.insertSheet("Tasks");
-          sheet.appendRow(["id", "projectId", "content", "startTime", "planEndTime", "priority", "isCompleted", "completedAt", "evaluation", "remarks", "deadlineHistory"]);
-        }
-        return sheet;
       }
       ---------------------------------------------------------------------------------
 
@@ -495,7 +586,7 @@
       9. Nhấp vào "Triển khai" và cho phép các quyền truy cập ứng dụng.
       10. Copy URL Ứng dụng web được cung cấp và dán vào hằng số SCRIPT_URL bên dưới.
     */
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxPnH8F6VCzesKB8ihK6UYZz4mbxzVokBnVrPfuJn3ux4NhKNJOhG2vMny_vXAslgxzuw/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxwWaBNJIpCUoJIpjHOlc8y9_RCzVyx-3EDDLU56SPQxldbPPIdYV6DZ92Q7XFr8uVymg/exec";
 
     // ---------------------------------------------------------
     // 1. STATE & STORAGE PERSISTENCE
@@ -656,8 +747,19 @@
       showLoading(true);
       try {
         const data = await apiCall('GET');
-        if (Array.isArray(data)) {
-          state.tasks = data.map(t => ({
+        if (data && typeof data === 'object') {
+          let tasksData = [];
+          let projectsData = [];
+
+          if (Array.isArray(data)) {
+            // Backward compatibility: response is just a flat list of tasks
+            tasksData = data;
+          } else {
+            tasksData = Array.isArray(data.tasks) ? data.tasks : [];
+            projectsData = Array.isArray(data.projects) ? data.projects : [];
+          }
+
+          state.tasks = tasksData.map(t => ({
             id: t.id || ('task-' + Date.now() + Math.random().toString(36).substr(2, 5)),
             projectId: t.projectId || t.projectName || 'Dự án chung',
             content: t.content || '',
@@ -670,11 +772,18 @@
             remarks: t.remarks || '',
             deadlineHistory: Array.isArray(t.deadlineHistory) ? t.deadlineHistory : (typeof t.deadlineHistory === 'string' ? JSON.parse(t.deadlineHistory || '[]') : [])
           }));
+
+          // Load custom projects
+          state.tempProjects = projectsData.map(p => ({
+            id: p.id || p.name,
+            name: p.name || '',
+            createdAt: p.createdAt || new Date().toISOString()
+          }));
           
           extractProjectsFromTasks();
           showToast('Đồng bộ dữ liệu trực tuyến thành công!');
         } else {
-          showToast('Dữ liệu trả về không đúng cấu trúc danh sách!', 'error');
+          showToast('Dữ liệu trả về không đúng cấu trúc!', 'error');
         }
       } catch (err) {
         if (state.tasks.length === 0) {
@@ -780,6 +889,112 @@
         extractProjectsFromTasks();
         renderApp();
         showToast('Lỗi đồng bộ trực tuyến! Công việc đã được xóa tạm thời khỏi bộ nhớ.', 'error');
+      }
+    }
+
+    // Real-time synchronization helper for creating projects
+    async function syncCreateProject(project) {
+      if (!SCRIPT_URL || SCRIPT_URL.includes("ĐIỀN_LINK_CỦA_BẠN")) {
+        state.tempProjects = state.tempProjects || [];
+        state.tempProjects.unshift(project);
+        extractProjectsFromTasks();
+        renderApp();
+        showToast('Đã thêm dự án mới thành công (Chế độ offline)!');
+        return;
+      }
+
+      try {
+        const res = await apiCall('POST', { action: 'createProject', project: project });
+        if (res && res.status === 'success') {
+          state.tempProjects = state.tempProjects || [];
+          state.tempProjects.unshift(project);
+          extractProjectsFromTasks();
+          renderApp();
+          showToast('Đã tạo dự án và đồng bộ trực tuyến thành công!');
+        } else {
+          throw new Error(res ? res.message : 'Yêu cầu đồng bộ không thành công');
+        }
+      } catch (err) {
+        console.error("Sync Create Project Failed:", err);
+        state.tempProjects = state.tempProjects || [];
+        state.tempProjects.unshift(project);
+        extractProjectsFromTasks();
+        renderApp();
+        showToast('Lỗi đồng bộ trực tuyến! Dự án đã được lưu tạm thời.', 'error');
+      }
+    }
+
+    // Real-time synchronization helper for updating projects
+    async function syncUpdateProject(project) {
+      if (!SCRIPT_URL || SCRIPT_URL.includes("ĐIỀN_LINK_CỦA_BẠN")) {
+        const idx = state.tempProjects.findIndex(p => p.id === project.id);
+        if (idx > -1) {
+          state.tempProjects[idx] = project;
+        }
+        const projIdx = state.projects.findIndex(p => p.id === project.id);
+        if (projIdx > -1) {
+          state.projects[projIdx].name = project.name;
+        }
+        extractProjectsFromTasks();
+        renderApp();
+        showToast('Đã lưu chỉnh sửa tên dự án (Chế độ offline)!');
+        return;
+      }
+
+      try {
+        const res = await apiCall('POST', { action: 'updateProject', project: project });
+        if (res && res.status === 'success') {
+          const idx = state.tempProjects.findIndex(p => p.id === project.id);
+          if (idx > -1) {
+            state.tempProjects[idx] = project;
+          }
+          extractProjectsFromTasks();
+          renderApp();
+          showToast('Đã cập nhật dự án và đồng bộ trực tuyến!');
+        } else {
+          throw new Error(res ? res.message : 'Yêu cầu đồng bộ không thành công');
+        }
+      } catch (err) {
+        console.error("Sync Update Project Failed:", err);
+        const idx = state.tempProjects.findIndex(p => p.id === project.id);
+        if (idx > -1) {
+          state.tempProjects[idx] = project;
+        }
+        extractProjectsFromTasks();
+        renderApp();
+        showToast('Lỗi đồng bộ trực tuyến! Cập nhật đã được lưu tạm thời.', 'error');
+      }
+    }
+
+    // Real-time synchronization helper for deleting projects
+    async function syncDeleteProject(projectId, taskIdsToExclude) {
+      if (!SCRIPT_URL || SCRIPT_URL.includes("ĐIỀN_LINK_CỦA_BẠN")) {
+        state.tempProjects = state.tempProjects.filter(p => p.id !== projectId);
+        state.tasks = state.tasks.filter(t => t.projectId !== projectId);
+        extractProjectsFromTasks();
+        renderApp();
+        showToast('Đã xóa dự án và toàn bộ công việc liên quan (Chế độ offline)!', 'error');
+        return;
+      }
+
+      try {
+        const res = await apiCall('POST', { action: 'deleteProject', id: projectId, taskIds: taskIdsToExclude });
+        if (res && res.status === 'success') {
+          state.tempProjects = state.tempProjects.filter(p => p.id !== projectId);
+          state.tasks = state.tasks.filter(t => t.projectId !== projectId);
+          extractProjectsFromTasks();
+          renderApp();
+          showToast('Đã xóa dự án và đồng bộ trực tuyến thành công!');
+        } else {
+          throw new Error(res ? res.message : 'Yêu cầu đồng bộ không thành công');
+        }
+      } catch (err) {
+        console.error("Sync Delete Project Failed:", err);
+        state.tempProjects = state.tempProjects.filter(p => p.id !== projectId);
+        state.tasks = state.tasks.filter(t => t.projectId !== projectId);
+        extractProjectsFromTasks();
+        renderApp();
+        showToast('Lỗi đồng bộ trực tuyến! Dữ liệu đã được xóa tạm thời khỏi bộ nhớ.', 'error');
       }
     }
 
@@ -2056,7 +2271,7 @@
     }
 
     // Project Form Submit
-    function handleProjectFormSubmit(e) {
+    async function handleProjectFormSubmit(e) {
       e.preventDefault();
       const errEl = document.getElementById('project-form-error');
       errEl.classList.add('hidden');
@@ -2073,8 +2288,8 @@
         // Edit project
         const idx = state.projects.findIndex(p => p.id === projectId);
         if (idx > -1) {
-          state.projects[idx].name = name;
-          showToast('Đã lưu chỉnh sửa tên dự án thành công!');
+          const updatedProj = { ...state.projects[idx], name };
+          await syncUpdateProject(updatedProj);
         }
       } else {
         // Create project
@@ -2083,13 +2298,10 @@
           name,
           createdAt: new Date().toISOString()
         };
-        state.projects.unshift(newProj);
-        showToast('Đã thêm dự án theo dõi mới thành công!');
+        await syncCreateProject(newProj);
       }
 
-      saveState();
       resetProjectForm();
-      renderApp();
     }
 
     function handleEditProject(projectId) {
@@ -2112,18 +2324,14 @@
       document.getElementById('project-form-error').classList.add('hidden');
     }
 
-    function handleDeleteProject(projectId) {
+    async function handleDeleteProject(projectId) {
       const projTasks = state.tasks.filter(t => t.projectId === projectId);
       const confirmMsg = projTasks.length > 0 
         ? `Dự án này đang có ${projTasks.length} công việc đính kèm! Xóa dự án sẽ đồng thời xóa toàn bộ công việc liên quan. Bạn có chắc chắn muốn xóa không?`
         : `Bạn có chắc chắn muốn xóa hoàn toàn dự án này khỏi danh sách?`;
 
       if (confirm(confirmMsg)) {
-        state.projects = state.projects.filter(p => p.id !== projectId);
-        state.tasks = state.tasks.filter(t => t.projectId !== projectId);
-        saveState();
-        renderApp();
-        showToast('Đã xóa dự án và toàn bộ công việc liên quan!', 'error');
+        await syncDeleteProject(projectId, projTasks.map(t => t.id));
       }
     }
 
