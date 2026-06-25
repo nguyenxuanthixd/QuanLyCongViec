@@ -687,6 +687,102 @@
       }
     }
 
+    // Real-time synchronization helper for creating tasks
+    async function syncCreateTask(task) {
+      if (!SCRIPT_URL || SCRIPT_URL.includes("ĐIỀN_LINK_CỦA_BẠN")) {
+        state.tasks.unshift(task);
+        extractProjectsFromTasks();
+        renderApp();
+        showToast('Đã thêm công việc mới vào nhật ký (Chế độ offline)!');
+        return;
+      }
+
+      try {
+        const res = await apiCall('POST', { action: 'create', task: task });
+        if (res && res.status === 'success') {
+          state.tasks.unshift(task);
+          extractProjectsFromTasks();
+          renderApp();
+          showToast('Đã thêm công việc và đồng bộ trực tuyến thành công!');
+        } else {
+          throw new Error(res ? res.message : 'Yêu cầu đồng bộ không thành công');
+        }
+      } catch (err) {
+        console.error("Sync Create Failed:", err);
+        state.tasks.unshift(task);
+        extractProjectsFromTasks();
+        renderApp();
+        showToast('Lỗi đồng bộ trực tuyến! Công việc đã được lưu tạm thời trong bộ nhớ.', 'error');
+      }
+    }
+
+    // Real-time synchronization helper for updating tasks
+    async function syncUpdateTask(task) {
+      if (!SCRIPT_URL || SCRIPT_URL.includes("ĐIỀN_LINK_CỦA_BẠN")) {
+        const idx = state.tasks.findIndex(t => t.id === task.id);
+        if (idx > -1) {
+          state.tasks[idx] = task;
+        }
+        extractProjectsFromTasks();
+        renderApp();
+        showToast('Đã lưu chỉnh sửa công việc (Chế độ offline)!');
+        return;
+      }
+
+      try {
+        const res = await apiCall('POST', { action: 'update', task: task });
+        if (res && res.status === 'success') {
+          const idx = state.tasks.findIndex(t => t.id === task.id);
+          if (idx > -1) {
+            state.tasks[idx] = task;
+          }
+          extractProjectsFromTasks();
+          renderApp();
+          showToast('Đã cập nhật công việc và đồng bộ trực tuyến!');
+        } else {
+          throw new Error(res ? res.message : 'Yêu cầu đồng bộ không thành công');
+        }
+      } catch (err) {
+        console.error("Sync Update Failed:", err);
+        const idx = state.tasks.findIndex(t => t.id === task.id);
+        if (idx > -1) {
+          state.tasks[idx] = task;
+        }
+        extractProjectsFromTasks();
+        renderApp();
+        showToast('Lỗi đồng bộ trực tuyến! Cập nhật đã được lưu tạm thời.', 'error');
+      }
+    }
+
+    // Real-time synchronization helper for deleting tasks
+    async function syncDeleteTask(taskId) {
+      if (!SCRIPT_URL || SCRIPT_URL.includes("ĐIỀN_LINK_CỦA_BẠN")) {
+        state.tasks = state.tasks.filter(t => t.id !== taskId);
+        extractProjectsFromTasks();
+        renderApp();
+        showToast('Đã xóa công việc khỏi nhật ký (Chế độ offline)!', 'error');
+        return;
+      }
+
+      try {
+        const res = await apiCall('POST', { action: 'delete', id: taskId });
+        if (res && res.status === 'success') {
+          state.tasks = state.tasks.filter(t => t.id !== taskId);
+          extractProjectsFromTasks();
+          renderApp();
+          showToast('Đã xóa công việc và đồng bộ trực tuyến thành công!');
+        } else {
+          throw new Error(res ? res.message : 'Yêu cầu đồng bộ không thành công');
+        }
+      } catch (err) {
+        console.error("Sync Delete Failed:", err);
+        state.tasks = state.tasks.filter(t => t.id !== taskId);
+        extractProjectsFromTasks();
+        renderApp();
+        showToast('Lỗi đồng bộ trực tuyến! Công việc đã được xóa tạm thời khỏi bộ nhớ.', 'error');
+      }
+    }
+
     function checkSheetsConnection() {
       const banner = document.getElementById('sheets-connection-banner');
       if (banner) {
