@@ -585,7 +585,7 @@
       9. Nhấp vào "Triển khai" và cho phép các quyền truy cập ứng dụng.
       10. Copy URL Ứng dụng web được cung cấp và dán vào hằng số SCRIPT_URL bên dưới.
     */
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz3dBAhlTrFnJjxptD9IcdtBHQTNkTbpkJFfCHRO-wNnSC2Lutg0vuoO9g_42yMaDzJ9Q/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyP2u5o-1p7KVsDHLNhgTKFYc1n0PQnB32sRj1P2qw1H27tobBfv84ou81FLKObSu7KGg/exec";
 
     // ---------------------------------------------------------
     // 1. STATE & STORAGE PERSISTENCE
@@ -673,14 +673,57 @@
       ];
     }
 
+    const PROJECT_MAPPING = {
+      id: ['id', 'mã', 'ma', 'mã dự án', 'ma du an', 'projectid', 'project id'],
+      name: ['name', 'tên', 'ten', 'tên dự án', 'ten du an', 'projectname', 'project name', 'project'],
+      createdAt: ['createdat', 'created at', 'ngày tạo', 'ngay tao', 'ngày', 'ngay']
+    };
+
+    const TASK_MAPPING = {
+      id: ['id', 'mã', 'ma', 'mã công việc', 'ma cong viec'],
+      projectId: ['projectid', 'project id', 'mã dự án', 'ma du an', 'dự án', 'du an', 'project', 'projectName', 'projectname', 'tên dự án', 'ten du an'],
+      content: ['content', 'nội dung', 'noi dung', 'nội dung công việc', 'noi dung cong viec', 'task', 'job'],
+      startTime: ['starttime', 'start time', 'ngày bắt đầu', 'ngay bat dau', 'bắt đầu', 'bat dau', 'thời gian bắt đầu', 'thoi gian bat dau'],
+      planEndTime: ['planendtime', 'plan end time', 'hạn chót', 'han chot', 'hạn chót kế hoạch', 'han chot ke hoach', 'deadline', 'hạn', 'han'],
+      priority: ['priority', 'ưu tiên', 'uu tien', 'mức độ ưu tiên', 'muc do uu tien'],
+      isCompleted: ['iscompleted', 'is completed', 'hoàn thành', 'hoan thanh', 'trạng thái', 'trang thai'],
+      completedAt: ['completedat', 'completed at', 'ngày hoàn thành', 'ngay hoan thanh', 'thời gian thực tế hoàn thành', 'thoi gian thuc te hoan thanh'],
+      evaluation: ['evaluation', 'đánh giá', 'danh gia', 'kết quả đánh giá', 'ket qua danh gia'],
+      remarks: ['remarks', 'nhận xét', 'nhan xet', 'nhận xét / bài học rút ra', 'nhan xet / bai hoc rut ra', 'gợi ý', 'goi y'],
+      deadlineHistory: ['deadlinehistory', 'deadline history', 'lịch sử gia hạn', 'lich su gia han']
+    };
+
+    function getCleanObject(rawObj, mapping) {
+      if (!rawObj || typeof rawObj !== 'object') return {};
+      const cleanObj = {};
+      const lowerKeys = {};
+      for (const k in rawObj) {
+        if (rawObj[k] !== undefined && rawObj[k] !== null) {
+          lowerKeys[k.toLowerCase().trim()] = rawObj[k];
+        }
+      }
+      for (const [targetKey, possibleKeys] of Object.entries(mapping)) {
+        let value = undefined;
+        for (const possibleKey of possibleKeys) {
+          const keyLower = possibleKey.toLowerCase().trim();
+          if (lowerKeys[keyLower] !== undefined) {
+            value = lowerKeys[keyLower];
+            break;
+          }
+        }
+        cleanObj[targetKey] = value;
+      }
+      return cleanObj;
+    }
+
     // Helper to dynamically extract project names from task data
     function extractProjectsFromTasks() {
       state.tempProjects = state.tempProjects || [];
       
-      // Start with defined tempProjects
+      // Start with defined tempProjects and ensure names/ids are solid
       const projectsList = state.tempProjects.map(tp => ({
         id: tp.id,
-        name: tp.name,
+        name: tp.name || tp.id || 'Dự án không tên',
         createdAt: tp.createdAt || new Date().toISOString()
       }));
 
@@ -696,6 +739,19 @@
             name: id,
             createdAt: new Date().toISOString()
           });
+        } else {
+          // If the project exists in tempProjects but somehow has an empty name, fix it
+          const existingProj = projectsList.find(p => p.id === id);
+          if (existingProj && !existingProj.name) {
+            existingProj.name = id;
+          }
+        }
+      });
+
+      // Ensure that absolutely no project in the list has an empty name
+      projectsList.forEach(p => {
+        if (!p.name) {
+          p.name = p.id || 'Dự án không tên';
         }
       });
 
@@ -766,26 +822,58 @@
             projectsData = Array.isArray(data.projects) ? data.projects : [];
           }
 
-          state.tasks = tasksData.map(t => ({
-            id: t.id || ('task-' + Date.now() + Math.random().toString(36).substr(2, 5)),
-            projectId: t.projectId || t.projectName || 'Dự án chung',
-            content: t.content || '',
-            startTime: t.startTime || new Date().toISOString(),
-            planEndTime: t.planEndTime || new Date().toISOString(),
-            priority: t.priority || 'Trung bình',
-            isCompleted: (t.isCompleted === true || t.isCompleted === 'true' || t.isCompleted === 'TRUE'),
-            completedAt: t.completedAt || '',
-            evaluation: t.evaluation || '',
-            remarks: t.remarks || '',
-            deadlineHistory: Array.isArray(t.deadlineHistory) ? t.deadlineHistory : (typeof t.deadlineHistory === 'string' ? JSON.parse(t.deadlineHistory || '[]') : [])
-          }));
+          state.tasks = tasksData.map(t => {
+            const cleanTask = getCleanObject(t, TASK_MAPPING);
+            return {
+              id: cleanTask.id || ('task-' + Date.now() + Math.random().toString(36).substr(2, 5)),
+              projectId: cleanTask.projectId || 'Dự án chung',
+              content: cleanTask.content || '',
+              startTime: cleanTask.startTime || new Date().toISOString(),
+              planEndTime: cleanTask.planEndTime || new Date().toISOString(),
+              priority: cleanTask.priority || 'Trung bình',
+              isCompleted: (cleanTask.isCompleted === true || cleanTask.isCompleted === 'true' || cleanTask.isCompleted === 'TRUE'),
+              completedAt: cleanTask.completedAt || '',
+              evaluation: cleanTask.evaluation || '',
+              remarks: cleanTask.remarks || '',
+              deadlineHistory: (() => {
+                const dh = cleanTask.deadlineHistory;
+                if (Array.isArray(dh)) return dh;
+                if (typeof dh === 'string' && dh.trim()) {
+                  try {
+                    return JSON.parse(dh);
+                  } catch (e) {
+                    return [];
+                  }
+                }
+                return [];
+              })()
+            };
+          });
 
           // Load custom projects
-          state.tempProjects = projectsData.map(p => ({
-            id: p.id || p.name,
-            name: p.name || '',
-            createdAt: p.createdAt || new Date().toISOString()
-          }));
+          state.tempProjects = projectsData.map(p => {
+            const cleanProj = getCleanObject(p, PROJECT_MAPPING);
+            
+            // Handle case where user duplicated Tasks sheet to create Projects sheet
+            // resulting in headers: id, projectId (containing project name), content (containing createdAt)
+            let resolvedId = cleanProj.id;
+            let resolvedName = cleanProj.name;
+            let resolvedCreatedAt = cleanProj.createdAt;
+
+            if (p.id && p.projectId && p.projectId !== p.id) {
+              resolvedId = p.id;
+              resolvedName = p.projectId;
+              if (p.content && (p.content.includes('-') || p.content.includes('/'))) {
+                resolvedCreatedAt = p.content;
+              }
+            }
+
+            return {
+              id: resolvedId || resolvedName || ('proj-' + Date.now()),
+              name: resolvedName || resolvedId || 'Dự án không tên',
+              createdAt: resolvedCreatedAt || new Date().toISOString()
+            };
+          });
           
           extractProjectsFromTasks();
           showToast('Đồng bộ dữ liệu trực tuyến thành công!');
