@@ -134,8 +134,8 @@
     </div>
 
     <!-- Active Overdue Alerts Banner (Crucial Alert Center) -->
-    <div id="alert-banner-container" class="hidden mb-6 animate-fade-in">
-      <div class="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-2xl p-4 flex items-start gap-3 shadow-xs">
+    <div id="alert-banner-container" class="hidden mb-6 animate-fade-in" onclick="showOverdueTasks()" title="Nhấp để xem danh sách chi tiết các công việc trễ hạn">
+      <div class="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-2xl p-4 flex items-start gap-3 shadow-xs cursor-pointer hover:border-amber-400 hover:bg-amber-100/30 dark:hover:bg-amber-950/30 hover:shadow-sm transition-all duration-200">
         <div class="p-2 bg-amber-150 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 rounded-xl shrink-0">
           <svg class="w-5 h-5 animate-bounce" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -143,7 +143,7 @@
         </div>
         <div class="flex-1">
           <h3 id="alert-banner-title" class="text-sm font-bold text-amber-850 dark:text-amber-300">CẢNH BÁO TIẾN ĐỘ: Đang có công việc trễ hạn!</h3>
-          <p id="alert-banner-desc" class="text-xs text-amber-600 dark:text-amber-400/80 mt-0.5">Một số hồ sơ kỹ thuật hoặc pháp lý đã quá thời hạn tự lập kế hoạch nhưng chưa hoàn tất đánh giá.</p>
+          <p id="alert-banner-desc" class="text-xs text-amber-600 dark:text-amber-400/80 mt-0.5">Một số hồ sơ kỹ thuật hoặc pháp lý đã quá thời hạn tự lập kế hoạch nhưng chưa hoàn tất đánh giá. (Nhấp vào đây để xem chi tiết và xử lý gấp)</p>
         </div>
       </div>
     </div>
@@ -1375,6 +1375,95 @@
       renderApp();
     }
 
+    function showOverdueTasks() {
+      // 1. Chuyển sang tab Công việc (Tasks Log)
+      switchTab('tasks');
+      
+      // 2. Reset các bộ lọc tìm kiếm và dự án để chắc chắn thấy việc trễ hạn
+      state.searchQuery = '';
+      const searchInput = document.getElementById('task-search');
+      if (searchInput) {
+        searchInput.value = '';
+      }
+      
+      state.filterProjectId = 'all';
+      const projectFilterSelect = document.getElementById('task-filter-project');
+      if (projectFilterSelect) {
+        projectFilterSelect.value = 'all';
+      }
+      
+      // 3. Đặt trạng thái lọc là "overdue" (Trễ hạn)
+      state.filterStatus = 'overdue';
+      
+      // 4. Cập nhật giao diện các tab lọc trong tab công việc
+      document.querySelectorAll('.task-filter-tab').forEach(b => {
+        if (b.getAttribute('data-filter') === 'overdue') {
+          b.className = 'task-filter-tab flex-1 md:flex-initial px-3 py-1.5 text-[11px] font-bold rounded-lg text-indigo-600 bg-white dark:bg-slate-900 shadow-xs cursor-pointer';
+        } else {
+          b.className = 'task-filter-tab flex-1 md:flex-initial px-3 py-1.5 text-[11px] font-bold rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white cursor-pointer';
+        }
+      });
+      
+      // 5. Render lại danh sách công việc theo bộ lọc mới
+      renderTasksList();
+      
+      // 6. Cuộn mượt mà tới phần danh sách công việc
+      setTimeout(() => {
+        const filterBar = document.getElementById('task-search');
+        if (filterBar) {
+          filterBar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    }
+
+    window.showOverdueTasks = showOverdueTasks;
+
+    function focusAndEditTask(taskId) {
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!task) return;
+      
+      // 1. Chuyển sang tab Công việc (Tasks Log)
+      switchTab('tasks');
+      
+      // 2. Thiết lập ô tìm kiếm để hiện đúng công việc này
+      state.searchQuery = task.content.toLowerCase().trim();
+      const searchInput = document.getElementById('task-search');
+      if (searchInput) {
+        searchInput.value = task.content;
+      }
+      
+      // 3. Reset các bộ lọc khác để tránh che khuất công việc cần tìm
+      state.filterProjectId = 'all';
+      const projectFilterSelect = document.getElementById('task-filter-project');
+      if (projectFilterSelect) {
+        projectFilterSelect.value = 'all';
+      }
+      
+      state.filterStatus = 'all';
+      document.querySelectorAll('.task-filter-tab').forEach(b => {
+        if (b.getAttribute('data-filter') === 'all') {
+          b.className = 'task-filter-tab flex-1 md:flex-initial px-3 py-1.5 text-[11px] font-bold rounded-lg text-indigo-600 bg-white dark:bg-slate-900 shadow-xs cursor-pointer';
+        } else {
+          b.className = 'task-filter-tab flex-1 md:flex-initial px-3 py-1.5 text-[11px] font-bold rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white cursor-pointer';
+        }
+      });
+      
+      // 4. Render lại danh sách công việc
+      renderTasksList();
+      
+      // 5. Cuộn mượt mà tới phần công việc này và tự động kích hoạt chế độ chỉnh sửa
+      setTimeout(() => {
+        const filterBar = document.getElementById('task-search');
+        if (filterBar) {
+          filterBar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        // Gọi hàm chỉnh sửa chi tiết
+        handleEditTask(taskId);
+      }, 120);
+    }
+
+    window.focusAndEditTask = focusAndEditTask;
+
     function renderApp() {
       // 1. Core Alerts Check
       checkOverdueAlerts();
@@ -1402,7 +1491,7 @@
       if (overdueTasks.length > 0) {
         banner.classList.remove('hidden');
         document.getElementById('alert-banner-title').innerText = `CẢNH BÁO TIẾN ĐỘ: Đang có ${overdueTasks.length} công việc trễ hạn nội bộ!`;
-        document.getElementById('alert-banner-desc').innerText = `Các dự án yêu cầu hành động khẩn cấp để không ảnh hưởng đến thời hạn cam kết.`;
+        document.getElementById('alert-banner-desc').innerText = `Các dự án yêu cầu hành động khẩn cấp để không ảnh hưởng đến thời hạn cam kết. (Nhấp vào đây để xem chi tiết và xử lý gấp)`;
       } else {
         banner.classList.add('hidden');
       }
@@ -1577,9 +1666,11 @@
         </div>
 
         <!-- Card 4: Trễ hạn -->
-        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 shadow-xs flex items-center gap-4 transition-colors duration-200 ${
-          overdueTasksCount > 0 ? 'border-rose-300 bg-rose-50/50 dark:bg-rose-950/20' : ''
-        }">
+        <div onclick="showOverdueTasks()" class="bg-white dark:bg-slate-900 rounded-2xl border p-5 shadow-xs flex items-center gap-4 transition-all duration-200 cursor-pointer ${
+          overdueTasksCount > 0 
+            ? 'border-rose-300 bg-rose-50/50 dark:bg-rose-950/20 hover:border-rose-400 hover:shadow-md hover:scale-[1.01]' 
+            : 'border-gray-100 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-750 hover:shadow-sm'
+        }" title="Click để xem danh sách công việc trễ hạn">
           <div class="p-3.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl">
             <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
           </div>
@@ -1589,7 +1680,7 @@
               ${overdueTasksCount}
             </h4>
             <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-              Yêu cầu xử lý gấp
+              Click để kiểm tra xử lý gấp
             </p>
           </div>
         </div>
@@ -1706,15 +1797,15 @@
                           }
 
                           return `
-                            <div class="flex items-start justify-between gap-3 text-xs p-2.5 rounded-lg border transition duration-150 ${
+                            <div onclick="focusAndEditTask('${t.id}')" class="flex items-start justify-between gap-3 text-xs p-2.5 rounded-lg border transition-all duration-150 cursor-pointer ${
                               t.isCompleted 
                                 ? t.evaluation === 'Dat'
-                                  ? 'bg-emerald-50/10 dark:bg-emerald-950/10 border-emerald-100/40 dark:border-emerald-900/20 text-gray-700 dark:text-slate-300'
-                                  : 'bg-rose-50/10 dark:bg-rose-950/10 border-rose-100/40 dark:border-rose-900/20 text-gray-700 dark:text-slate-300'
+                                  ? 'bg-emerald-50/10 dark:bg-emerald-950/10 border-emerald-100/40 dark:border-emerald-900/20 text-gray-700 dark:text-slate-300 hover:bg-emerald-50/25 dark:hover:bg-emerald-950/20 hover:shadow-xs'
+                                  : 'bg-rose-50/10 dark:bg-rose-950/10 border-rose-100/40 dark:border-rose-900/20 text-gray-700 dark:text-slate-300 hover:bg-rose-50/25 dark:hover:bg-rose-950/20 hover:shadow-xs'
                                 : isOverdue
-                                  ? 'bg-rose-50/10 dark:bg-rose-950/20 border-rose-200/30 dark:border-rose-900/30 text-gray-850 dark:text-slate-200'
-                                  : 'bg-white dark:bg-slate-900 border-gray-100 dark:border-slate-800 text-gray-700 dark:text-slate-200'
-                            }">
+                                  ? 'bg-rose-50/10 dark:bg-rose-950/20 border-rose-200/30 dark:border-rose-900/30 text-gray-850 dark:text-slate-200 hover:bg-rose-50/25 dark:hover:bg-rose-950/30 hover:border-rose-350 hover:shadow-xs'
+                                  : 'bg-white dark:bg-slate-900 border-gray-100 dark:border-slate-800 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800/80 hover:border-gray-200 dark:hover:border-slate-700 hover:shadow-xs'
+                            }" title="Click để chuyển nhanh và chỉnh sửa công việc">
                               <div class="space-y-1 min-w-0">
                                 <p class="font-semibold leading-relaxed ${t.isCompleted ? 'line-through text-gray-400 dark:text-slate-500' : 'text-gray-750 dark:text-slate-200'}">
                                   ${t.content}
