@@ -66,6 +66,14 @@
 
       <!-- Controls -->
       <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Notification Toggle Button -->
+        <button id="notification-toggle-btn" class="p-2 rounded-xl text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition duration-150 cursor-pointer relative" title="Bật/Tắt thông báo đẩy trình duyệt">
+          <svg id="notification-bell-icon" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          </svg>
+          <span id="notification-badge" class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 hidden animate-pulse"></span>
+        </button>
+
         <!-- Theme Toggle -->
         <button id="theme-toggle-btn" class="p-2 rounded-xl text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition duration-150 cursor-pointer" title="Đổi giao diện Sáng / Tối">
           <svg id="theme-sun-icon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -600,7 +608,8 @@
       filterStatus: 'all',
       filterProjectId: 'all',
       isEvaluatingTaskId: null,
-      evaluatingSelection: 'Dat'
+      evaluatingSelection: 'Dat',
+      notifiedTasks: {} // Track task IDs that already triggered a notification (near/overdue) in this session
     };
 
     // Realistic Mock Data for Instant Dashboard Display
@@ -1126,6 +1135,9 @@
       // Event Listeners setup
       setupEventListeners();
 
+      // Init notification system permissions and styles
+      initNotificationSystem();
+
       // Load data from Sheets or fallback mock
       await loadOnlineData();
 
@@ -1292,6 +1304,11 @@
       // Export CSV
       document.getElementById('global-export-btn').addEventListener('click', () => {
         exportTasksToCSV();
+      });
+
+      // Browser Notification toggle click
+      document.getElementById('notification-toggle-btn').addEventListener('click', () => {
+        requestNotificationPermission();
       });
 
       // Task forms and filters listeners
@@ -1495,6 +1512,194 @@
       } else {
         banner.classList.add('hidden');
       }
+
+      // Kiểm tra và kích hoạt thông báo đẩy / thông báo toast tương tác cho các công việc sắp hoặc đã trễ hạn
+      checkAndSendDeadlinesNotifications();
+    }
+
+    // ---------------------------------------------------------
+    // HỆ THỐNG THÔNG BÁO ĐẨY TRÌNH DUYỆT & THÔNG BÁO TƯƠNG TÁC TRÊN WEB
+    // ---------------------------------------------------------
+    function initNotificationSystem() {
+      updateNotificationBellUI();
+      if ('Notification' in window && Notification.permission === 'granted') {
+        const badge = document.getElementById('notification-badge');
+        if (badge) badge.classList.remove('hidden');
+      }
+    }
+
+    function updateNotificationBellUI() {
+      const bellBtn = document.getElementById('notification-toggle-btn');
+      const badge = document.getElementById('notification-badge');
+      if (!bellBtn) return;
+
+      if (!('Notification' in window)) {
+        bellBtn.title = "Trình duyệt không hỗ trợ thông báo đẩy trực tiếp";
+        bellBtn.classList.add('opacity-40');
+        return;
+      }
+
+      const permission = Notification.permission;
+      if (permission === 'granted') {
+        bellBtn.title = "Đã bật nhận thông báo đẩy khi sắp hoặc đã trễ hạn";
+        bellBtn.className = "p-2 rounded-xl text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 transition duration-150 cursor-pointer relative";
+        if (badge) {
+          badge.classList.remove('hidden');
+          badge.className = "absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+        }
+      } else if (permission === 'denied') {
+        bellBtn.title = "Thông báo bị chặn! Hãy nhấp vào biểu tượng ổ khóa bên trái thanh địa chỉ trình duyệt để cho phép ứng dụng gửi thông báo.";
+        bellBtn.className = "p-2 rounded-xl text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/20 transition duration-150 cursor-pointer relative";
+        if (badge) {
+          badge.classList.remove('hidden');
+          badge.className = "absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500";
+        }
+      } else {
+        bellBtn.title = "Nhấp để nhận thông báo trình duyệt khi công việc sắp trễ hạn hoặc đã quá hạn";
+        bellBtn.className = "p-2 rounded-xl text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition duration-150 cursor-pointer relative";
+        if (badge) badge.classList.add('hidden');
+      }
+    }
+
+    async function requestNotificationPermission() {
+      if (!('Notification' in window)) {
+        showToast("Trình duyệt của bạn không hỗ trợ công nghệ thông báo đẩy!", "error");
+        return;
+      }
+
+      const inIframe = window.self !== window.top;
+
+      try {
+        if (Notification.permission === 'denied') {
+          showToast("Bạn đã chặn thông báo trước đó. Vui lòng nhấp vào biểu tượng ổ khóa ở góc trái thanh địa chỉ để cấp lại quyền!", "error");
+          return;
+        }
+
+        const permission = await Notification.requestPermission();
+        updateNotificationBellUI();
+
+        if (permission === 'granted') {
+          showToast("Đã kích hoạt nhận thông báo trình duyệt thành công!");
+          new Notification("🎯 Theo Dõi Tiến Độ", {
+            body: "Kích hoạt thành công! Hệ thống sẽ gửi cảnh báo trực tiếp khi công việc sắp trễ hạn hoặc quá hạn.",
+            tag: 'test-notification'
+          });
+        } else if (permission === 'denied') {
+          if (inIframe) {
+            showToast("Trình duyệt chặn thông báo trong iframe xem thử! Vui lòng mở ứng dụng trong Tab mới bằng nút phía trên để bật thông báo.", "error");
+          } else {
+            showToast("Bạn đã từ chối cấp quyền thông báo.", "error");
+          }
+        }
+      } catch (err) {
+        console.error("Error requesting permission:", err);
+        if (inIframe) {
+          showToast("Vui lòng click 'Mở tab mới' ở góc trên màn hình để bật và trải nghiệm thông báo đẩy trực tiếp!", "error");
+        } else {
+          showToast("Không thể yêu cầu quyền thông báo: " + err.message, "error");
+        }
+      }
+    }
+
+    function showInteractiveNotificationToast(title, body, taskId) {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      const isOverdue = title.includes("🚨") || title.includes("TRỄ");
+      const bgStyle = isOverdue 
+        ? 'bg-rose-50 dark:bg-rose-950/90 border-rose-200 dark:border-rose-900 text-rose-900 dark:text-rose-100' 
+        : 'bg-amber-50 dark:bg-amber-950/90 border-amber-200 dark:border-amber-900 text-amber-900 dark:text-amber-100';
+
+      toast.className = `animate-fade-in flex flex-col gap-2 p-4 rounded-2xl shadow-xl text-xs border transition-all duration-300 max-w-sm ${bgStyle}`;
+      
+      const icon = isOverdue
+        ? `<svg class="w-5 h-5 text-rose-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4" /></svg>`
+        : `<svg class="w-5 h-5 text-amber-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+
+      toast.innerHTML = `
+        <div class="flex items-start gap-2.5">
+          ${icon}
+          <div class="flex-1">
+            <p class="font-bold uppercase tracking-wider text-[10px] opacity-75">${title}</p>
+            <p class="font-semibold mt-0.5 leading-relaxed">${body}</p>
+          </div>
+          <button class="text-gray-400 hover:text-gray-600 dark:hover:text-white shrink-0 cursor-pointer" onclick="this.closest('.animate-fade-in').remove()">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <div class="flex justify-end gap-2 mt-1">
+          <button onclick="this.closest('.animate-fade-in').remove(); focusAndEditTask('${taskId}')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-[10px] shadow-xs cursor-pointer transition">
+            Xem & Xử lý ngay
+          </button>
+        </div>
+      `;
+      
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.classList.add('opacity-0', 'scale-95');
+          setTimeout(() => toast.remove(), 300);
+        }
+      }, 15000);
+    }
+
+    function triggerBrowserNotification(title, body, taskId) {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          const notif = new Notification(title, {
+            body: body,
+            icon: '/favicon.ico',
+            requireInteraction: true
+          });
+          notif.onclick = function() {
+            window.focus();
+            focusAndEditTask(taskId);
+            notif.close();
+          };
+        } catch (e) {
+          console.warn("Desktop notification blocked or failed in iframe sandbox:", e);
+        }
+      }
+      showInteractiveNotificationToast(title, body, taskId);
+    }
+
+    function checkAndSendDeadlinesNotifications() {
+      if (!state.tasks || state.tasks.length === 0) return;
+
+      const nowMs = Date.now();
+      const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+      state.tasks.forEach(t => {
+        if (t.isCompleted) return;
+
+        const planEndTimeMs = new Date(t.planEndTime).getTime();
+        const diff = planEndTimeMs - nowMs;
+
+        if (diff < 0) {
+          const key = t.id + '_overdue';
+          if (!state.notifiedTasks[key]) {
+            triggerBrowserNotification(
+              "🚨 CÔNG VIỆC ĐÃ TRỄ HẠN!",
+              `Công việc "${t.content}" đã bị trễ hạn hoàn thành!`,
+              t.id
+            );
+            state.notifiedTasks[key] = true;
+          }
+        } else if (diff <= ONE_DAY_MS) {
+          const key = t.id + '_near';
+          if (!state.notifiedTasks[key]) {
+            const hoursLeft = Math.max(1, Math.round(diff / (1000 * 60 * 60)));
+            triggerBrowserNotification(
+              "⚠️ CÔNG VIỆC SẮP TRỄ HẠN!",
+              `Công việc "${t.content}" sắp đến hạn hoàn thành (còn khoảng ${hoursLeft} giờ)!`,
+              t.id
+            );
+            state.notifiedTasks[key] = true;
+          }
+        }
+      });
     }
 
     function populateProjectSelects() {
